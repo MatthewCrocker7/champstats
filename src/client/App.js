@@ -1,7 +1,29 @@
 import React, { Component } from 'react';
-import './app.css';
+import { withStyles } from '@material-ui/core/styles';
+import 'typeface-roboto';
 import PlayerSearch from './components/PlayerSearch.js';
+import PlayerContent from './components/PlayerContent.js';
 import { connect } from 'react-redux';
+
+const styles = theme => ({
+  root: {
+    border: '3px solid #34568f',
+    height: '100vh',
+  },
+  navBarHome: {
+    marginTop: '15%',
+  },
+  navBarLoad: {
+    marginTop: '0%',
+  },
+  textStyle: {
+    color: '#34568f',
+    fontFamily: "Roboto",
+    backgroundColor: '#FFFFFF',
+    textAlign: 'center',
+  },
+});
+
 
 const mapStateToProps = state => {
   return {
@@ -20,18 +42,18 @@ class App extends Component {
 
   render() {
     const { username } = this.state;
-    const { players } = this.props;
+    const { classes, players } = this.props;
 
     return (
-      <div>
-        {username ? <h1>{`Hello ${username}`}, welcome to Champstats.co</h1> : <h1>Loading.. please wait!</h1>}
-        <PlayerSearch />
-        {players ? players.map(x =>
-          <h1 key={x.toString()}>{x}</h1>
-        ) : <h1></h1>}
+      <div className={classes.root}>
+        {username ? <h1 className={classes.textStyle}>{`Hello ${username}`}, welcome to Champstats.co</h1> : <h1 className={classes.textStyle}>Loading.. please wait!</h1>}
+        <div className={!players ? classes.navBarHome : (players[0].toString() == '' ? classes.navBarHome : classes.navBarLoad)} >
+          <PlayerSearch players={players}/>
+        </div>
+        {players ? <PlayerContent players={players}/> : <h1></h1>}
       </div>
     );
   }
 }
 
-export default connect(mapStateToProps)(App);
+export default connect(mapStateToProps)(withStyles(styles)(App));

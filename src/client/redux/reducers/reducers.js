@@ -14,7 +14,7 @@ export const rootReducer = (state = playerInitState, action) => {
   if(action.type == UPDATE_PLAYERS){
     return Object.assign({}, state, {
       players:
-        action.payload    
+        action.payload
     });
   }
   return state;

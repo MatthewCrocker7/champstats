@@ -10,11 +10,12 @@
     "server": "nodemon src/server/index.js",
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
-  "author": "Sandeep Raveesh",
+  "author": "Matthew Crocker",
   "license": "ISC",
   "dependencies": {
     "@material-ui/core": "^3.7.0",
     "babel-polyfill": "^6.26.0",
+    "body-parser": "^1.18.3",
     "express": "^4.16.3",
     "prop-types": "^15.6.2",
     "react": "^16.5.2",
