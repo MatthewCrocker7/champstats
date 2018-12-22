@@ -9,25 +9,44 @@ import { connect } from 'react-redux';
 import { updatePlayers } from '../redux/actions/actions.js';
 
 const styles = theme => ({
-  root: {
+  rootHome: {
     display: 'flex',
-    margin: 'auto',
-    marginTop: '10%',
     justifyContent: 'center',
   },
+  rootLoad: {
+    height: '35px',
+    display: 'flex',
+    marginLeft: '5%',
+    justifyContent: 'left',
+  },
   textField: {
-    margin: '0',
+    margin: '0px',
     width: '25%',
+    backgroundColor: '#FFFFFF',
   },
   buttonStyle: {
+    textAlign: 'center',
     display: 'inline-block',
-    margin: '0',
-    width: '8%',
+    margin: '0px',
+    width: '10%',
     backgroundColor: '#34568f',
   },
-  textStyle: {
+  cssLabel: {
+      color : '#34568f'
+    },
 
-  }
+    cssOutlinedInput: {
+      '&$cssFocused $notchedOutline': {
+        borderColor: `${'#34568f'} !important`,
+      },
+    },
+
+    cssFocused: {},
+
+    notchedOutline: {
+      borderWidth: '1px',
+      borderColor: '#34568f !important'
+    },
 });
 
 const mapDispatchToProps = dispatch => {
@@ -58,12 +77,12 @@ class PlayerSearch extends React.Component {
   }
 
   render(){
-    const { classes } = this.props;
+    const { classes, players } = this.props;
     const { playerSearch, playerLoaded } = this.state;
 
 
     return(
-      <div className={classes.root}>
+      <div className={!players ? classes.rootHome : (players[0].toString() == '' ? classes.rootHome : classes.rootLoad)}>
         <TextField
           onChange={this.updatePlayer}
           id="Player Name"
@@ -76,6 +95,19 @@ class PlayerSearch extends React.Component {
           variant="outlined"
           value={playerSearch}
           onKeyDown={this.keyPress}
+          InputLabelProps={{
+            classes: {
+              root: classes.cssLabel,
+              focused: classes.cssFocused,
+            },
+          }}
+          InputProps={{
+            classes: {
+              root: classes.cssOutlinedInput,
+              focused: classes.cssFocused,
+              notchedOutline: classes.notchedOutline,
+            },
+          }}
         />
         <Button
           onClick={this.searchPlayer}
