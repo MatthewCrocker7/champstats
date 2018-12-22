@@ -1,5 +1,8 @@
 h1 {
-  color: green;
+  color: #34568f;
+  font-family: "Roboto";
+  background-color: white;
+  text-align: center;
 }
 
 body {
