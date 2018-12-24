@@ -14,7 +14,6 @@ const styles = theme => ({
     justifyContent: 'center',
   },
   rootLoad: {
-    height: '35px',
     display: 'flex',
     marginLeft: '5%',
     justifyContent: 'left',
@@ -66,12 +65,12 @@ class PlayerSearch extends React.Component {
   }
 
   searchPlayer = event => {
-    this.props.updatePlayers({players: this.state.playerSearch.split( /[ ,]+/g )});
+    this.props.updatePlayers({players: this.state.playerSearch.split( /[:;!@?#$%^&*()-=|+,]+/g )});
   }
 
   keyPress = event => {
     if(event.keyCode == 13){
-      this.props.updatePlayers({players: event.target.value.split( /[ ,]+/g )});
+      this.props.updatePlayers({players: event.target.value.split( /[:;!@?#$%^&*()-=|+,]+/g )});
       console.log(event.target.value.split( /[ ,]+/g ));
     }
   }
@@ -82,7 +81,7 @@ class PlayerSearch extends React.Component {
 
 
     return(
-      <div className={!players ? classes.rootHome : (players[0].toString() == '' ? classes.rootHome : classes.rootLoad)}>
+      <div className={players ? classes.rootLoad : classes.rootHome }>
         <TextField
           onChange={this.updatePlayer}
           id="Player Name"

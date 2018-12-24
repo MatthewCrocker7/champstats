@@ -46,12 +46,25 @@ class App extends Component {
 
     return (
       <div className={classes.root}>
-        {username ? <h1 className={classes.textStyle}>{`Hello ${username}`}, welcome to Champstats.co</h1> : <h1 className={classes.textStyle}>Loading.. please wait!</h1>}
-        <div className={!players ? classes.navBarHome : (players[0].toString() == '' ? classes.navBarHome : classes.navBarLoad)} >
-          <PlayerSearch players={players}/>
+        <Header username={username} textStyle={classes.textStyle}/>
+        <div className={players ? classes.navBarLoad : classes.navBarHome } >
+        <PlayerSearch players={players}/>
         </div>
-        {players ? <PlayerContent players={players}/> : <h1></h1>}
+        {players && <PlayerContent players={players} />}
       </div>
+    );
+  }
+}
+
+export function Header(props) {
+  if(props.username){
+    return(
+      <h1 className={props.textStyle}>{`Hello ${props.username}`}, welcome to Champstats.co</h1>
+    );
+  }
+  else {
+    return (
+      <h1 className={props.textStyle}>Loading.. please wait!</h1>
     );
   }
 }
