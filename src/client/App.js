@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 const styles = theme => ({
   root: {
     border: '3px solid #34568f',
+    width: '100%',
     height: '100vh',
   },
   navBarHome: {
