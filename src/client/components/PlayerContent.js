@@ -1,19 +1,34 @@
 import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
+import Grid from '@material-ui/core/Grid';
+import NavBar from './NavBar.js';
 
 const styles = theme => ({
   root: {
     marginTop: '10px',
     borderTop: '3px solid #34568f',
     backgroundColor: '#FFFFFF',
-    height: '100vh'
+  },
+  gridRoot: {
+    flexGrow: 1,
   },
   textStyle: {
     color: '#34568f',
     fontFamily: "Roboto",
-    backgroundColor: '#FFFFFF',
     textAlign: 'center',
   },
+  loadTextStyle: {
+    color: '#34568f',
+    fontFamily: "Roboto",
+    textAlign: 'center',
+  },
+  contentLayout: {
+    border: '3px solid #34568f',
+    padding: theme.spacing.unit * 2,
+    marginLeft: '25px',
+    marginRight: '25px',
+    marginTop: '25px',
+  }
 });
 
 class PlayerContent extends React.Component{
@@ -57,23 +72,47 @@ class PlayerContent extends React.Component{
   }
 
   render(){
-
-
     const { classes, players } = this.props;
     const { stats } = this.state;
 
     return(
       <div className={classes.root}>
-        {stats ? <h1 className={classes.textStyle}>{stats}</h1> : <h1 className={classes.textStyle}>Loading... please wait.</h1>}
-        {players.map(x =>
-        <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
+        {stats ?
+          <Stats textStyle={classes.textStyle} stats={stats} contentLayout={classes.contentLayout} gridStyle={classes.gridRoot}/> :
+          <h1 className={classes.loadTextStyle}>Loading... please wait.</h1>
+        }
       </div>
     );
   }
 }
 
-function getStats(){
-
+function Stats(props){
+  return(
+    <div className={props.gridStyle}>
+      <Grid container spacing={24}>
+        <Grid item xs={4}>
+          <div className={props.contentLayout}>
+            <h1 className={props.textStyle}>{props.stats}</h1>
+          </div>
+        </Grid>
+        <Grid item xs={8}>
+          <div className={props.contentLayout}>
+            <h1 className={props.textStyle}>{props.stats}</h1>
+          </div>
+        </Grid>
+        <Grid item xs={4}>
+          <div className={props.contentLayout}>
+            <h1 className={props.textStyle}>{props.stats}</h1>
+          </div>
+        </Grid>
+        <Grid item xs={8}>
+          <div className={props.contentLayout}>
+            <h1 className={props.textStyle}>{props.stats}</h1>
+          </div>
+        </Grid>
+      </Grid>
+    </div>
+  );
 }
 
 export default withStyles(styles)(PlayerContent);
