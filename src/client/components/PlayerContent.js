@@ -9,6 +9,10 @@ const styles = theme => ({
     borderTop: '3px solid #34568f',
     backgroundColor: '#FFFFFF',
   },
+  navAlign: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
   gridRoot: {
     flexGrow: 1,
   },
@@ -78,7 +82,8 @@ class PlayerContent extends React.Component{
     return(
       <div className={classes.root}>
         {stats ?
-          <Stats textStyle={classes.textStyle} stats={stats} contentLayout={classes.contentLayout} gridStyle={classes.gridRoot}/> :
+          <Stats textStyle={classes.textStyle} stats={stats} contentLayout={classes.contentLayout} gridStyle={classes.gridRoot}
+          /> :
           <h1 className={classes.loadTextStyle}>Loading... please wait.</h1>
         }
       </div>
@@ -89,25 +94,26 @@ class PlayerContent extends React.Component{
 function Stats(props){
   return(
     <div className={props.gridStyle}>
+      <NavBar />
       <Grid container spacing={24}>
         <Grid item xs={4}>
           <div className={props.contentLayout}>
-            <h1 className={props.textStyle}>{props.stats}</h1>
+            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
           </div>
         </Grid>
         <Grid item xs={8}>
           <div className={props.contentLayout}>
-            <h1 className={props.textStyle}>{props.stats}</h1>
+            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
           </div>
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           <div className={props.contentLayout}>
-            <h1 className={props.textStyle}>{props.stats}</h1>
+            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
           </div>
         </Grid>
-        <Grid item xs={8}>
+        <Grid item xs={6}>
           <div className={props.contentLayout}>
-            <h1 className={props.textStyle}>{props.stats}</h1>
+            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
           </div>
         </Grid>
       </Grid>
