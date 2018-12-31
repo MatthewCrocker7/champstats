@@ -1,20 +1,15 @@
 import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
 import NavBar from './NavBar.js';
+import PlayerSummary from './playerComponents/PlayerSummary.js';
+import PlayerChampStats from './playerComponents/PlayerChampStats.js';
+import { connect } from 'react-redux';
 
 const styles = theme => ({
   root: {
     marginTop: '10px',
     borderTop: '3px solid #34568f',
     backgroundColor: '#FFFFFF',
-  },
-  navAlign: {
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  gridRoot: {
-    flexGrow: 1,
   },
   textStyle: {
     color: '#34568f',
@@ -26,14 +21,13 @@ const styles = theme => ({
     fontFamily: "Roboto",
     textAlign: 'center',
   },
-  contentLayout: {
-    border: '3px solid #34568f',
-    padding: theme.spacing.unit * 2,
-    marginLeft: '25px',
-    marginRight: '25px',
-    marginTop: '25px',
-  }
 });
+
+const mapStateToProps = state => {
+  return {
+    selectedNav: state.playerNav
+  };
+};
 
 class PlayerContent extends React.Component{
   state = {
@@ -76,14 +70,14 @@ class PlayerContent extends React.Component{
   }
 
   render(){
-    const { classes, players } = this.props;
+    const { classes, players, selectedNav } = this.props;
     const { stats } = this.state;
 
     return(
       <div className={classes.root}>
         {stats ?
-          <Stats textStyle={classes.textStyle} stats={stats} contentLayout={classes.contentLayout} gridStyle={classes.gridRoot}
-          /> :
+          <Stats stats={stats} selected={selectedNav}/>
+          :
           <h1 className={classes.loadTextStyle}>Loading... please wait.</h1>
         }
       </div>
@@ -93,32 +87,12 @@ class PlayerContent extends React.Component{
 
 function Stats(props){
   return(
-    <div className={props.gridStyle}>
+    <div>
       <NavBar />
-      <Grid container spacing={24}>
-        <Grid item xs={4}>
-          <div className={props.contentLayout}>
-            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
-          </div>
-        </Grid>
-        <Grid item xs={8}>
-          <div className={props.contentLayout}>
-            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
-          </div>
-        </Grid>
-        <Grid item xs={6}>
-          <div className={props.contentLayout}>
-            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
-          </div>
-        </Grid>
-        <Grid item xs={6}>
-          <div className={props.contentLayout}>
-            {props.stats.map(x => <h1 className={props.textStyle} key={x.toString()}>{x}</h1>)}
-          </div>
-        </Grid>
-      </Grid>
+      {props.selected == 0 && <PlayerSummary stats={props.stats}/>}
+      {props.selected == 1 && <PlayerChampStats stats={props.stats}/>}
     </div>
   );
 }
 
-export default withStyles(styles)(PlayerContent);
+export default connect(mapStateToProps)(withStyles(styles)(PlayerContent));

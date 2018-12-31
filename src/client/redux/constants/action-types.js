@@ -1,1 +1,2 @@
 export const UPDATE_PLAYERS = "UPDATE_PLAYERS";
+export const UPDATE_PLAYER_NAV = "UPDATE_PLAYER_NAV";

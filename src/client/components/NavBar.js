@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import ButtonBase from '@material-ui/core/ButtonBase';
-import Typography from '@material-ui/core/Typography';
+import NavBarButton from './NavBarButton.js';
+import { connect } from 'react-redux';
+import { updatePlayerNav } from '../redux/actions/actions.js';
 
 const styles = theme => ({
   root: {
@@ -9,38 +10,27 @@ const styles = theme => ({
     justifyContent: 'center',
     margin: 'auto',
     marginTop: '0px',
-    borderLeft: '3px solid #34568f',
-    borderBottom: '3px solid #34568f',
-    borderRight: '3px solid #34568f',
+    borderLeft: '2px solid #34568f',
+    borderBottom: '2px solid #34568f',
+    borderRight: '2px solid #34568f',
     width: '30%',
     height: '30px',
   },
-  buttonNormal: {
-    width: '33%',
-    height: '100%',
-    margin: 'auto',
-  },
-  buttonSelected: {
-    width: '33%',
-    height: '100%',
-    margin: 'auto',
-    backgroundColor: '#7aa0c4',
-  },
-  textStyle: {
-    color: '#34568f',
-    margin: 'auto',
-    textAlign: 'center',
-    fontWeight: theme.typography.fontWeightRegular,
-  },
 });
+
+const mapDispatchToProps = dispatch => {
+  return {
+    updateSelected: value => dispatch(updatePlayerNav(value))
+  };
+};
 
 class NavBar extends React.Component{
   state = {
     selected: 0
   }
 
-  handleChange = (event, value) => {
-    console.log(event.toString() + ' ' + value);
+  handleChange = (value) => {
+    this.props.updateSelected({value: value});
     this.setState({selected: value});
   }
 
@@ -50,24 +40,12 @@ class NavBar extends React.Component{
 
     return(
       <div className={classes.root}>
-        <ButtonBase className={selected == 0 ? classes.buttonSelected : classes.buttonNormal}>
-          <Typography variant='button' className={classes.textStyle}>
-          Summary {selected}
-          </Typography>
-        </ButtonBase>
-        <ButtonBase onClick={this.handleChange()} value={1} className={selected == 1 ? classes.buttonSelected : classes.buttonNormal}>
-          <Typography variant='button' className={classes.textStyle}>
-          Champ Stats
-          </Typography>
-        </ButtonBase>
-        <ButtonBase className={selected == 2 ? classes.buttonSelected : classes.buttonNormal}>
-          <Typography variant='button' className={classes.textStyle}>
-          Other
-          </Typography>
-        </ButtonBase>
+        <NavBarButton onChange={this.handleChange} value={0} selected={this.state.selected} label={'Summary'} />
+        <NavBarButton onChange={this.handleChange}  value={1} selected={this.state.selected}  label={'Champ Stats'} />
+        <NavBarButton onChange={this.handleChange}  value={2} selected={this.state.selected}  label={'Other'} />
       </div>
     );
   }
 }
 
-export default withStyles(styles)(NavBar);
+export default connect(null, mapDispatchToProps)(withStyles(styles)(NavBar));
