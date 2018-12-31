@@ -50,7 +50,6 @@ const styles = theme => ({
 
 const mapDispatchToProps = dispatch => {
   return {
-    //updatePlayers: players => dispatch(updatePlayers(String(players).match(/[ ,]+/g)))
     updatePlayers: players => dispatch(updatePlayers(players))
   };
 };
