@@ -76,9 +76,9 @@ class PlayerContent extends React.Component{
     return(
       <div className={classes.root}>
         {stats ?
-          <Stats stats={stats} selected={selectedNav}/>
+          <Stats stats={stats} selected={selectedNav} textStyle={classes.textStyle}/>
           :
-          <h1 className={classes.loadTextStyle}>Loading... please wait.</h1>
+          <h1 className={classes.textStyle}>Loading... please wait.</h1>
         }
       </div>
     );
@@ -86,6 +86,11 @@ class PlayerContent extends React.Component{
 }
 
 function Stats(props){
+  if(props.stats[0] === ''){
+    return(
+      <h1 className={props.textStyle}>Player not found. Please search again.</h1>
+    )
+  }
   return(
     <div>
       <NavBar />

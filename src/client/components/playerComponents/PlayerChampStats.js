@@ -27,22 +27,22 @@ class PlayerChampStats extends React.Component {
     return(
       <div className={classes.gridRoot}>
         <Grid container spacing={24}>
-          <Grid item xs={3}>
+          <Grid item xs={6}>
             <div className={classes.contentLayout}>
               {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
             </div>
           </Grid>
-          <Grid item xs={9}>
+          <Grid item xs={6}>
             <div className={classes.contentLayout}>
               {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
             </div>
           </Grid>
-          <Grid item xs={9}>
+          <Grid item xs={6}>
             <div className={classes.contentLayout}>
               {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
             </div>
           </Grid>
-          <Grid item xs={3}>
+          <Grid item xs={6}>
             <div className={classes.contentLayout}>
               {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
             </div>
