@@ -4,7 +4,7 @@ const express = require('express');
 const os = require('os');
 const bodyParser = require('body-parser');
 
-const request = require('request');
+const request = require('request-promise');
 
 
 const app = express();
@@ -21,54 +21,137 @@ app.listen(8080, () => console.log('Listening on port 8080!'));
 app.post('/api/champstats/playerSearch', function(req, res){
 
 var summonerRequest; //Summoner(s) to be looked up
-var response = [];
-var summoner1 = null;
-var summonerStats = [''];
+var summonerInfoAll = [];
+var summonerNotFound = [''];
 
 summonerRequest = req.body.stats
 if(summonerRequest[0] == ''){
-    res.send({ stats: summonerStats }); //Returns an array with an empty string. Client will see a "summoner not found message"
+    res.send({ stats: summonerNotFound }); //Returns an array with an empty string. Client will see a "summoner not found message"
 }
 else {
-  console.log(summonerRequest);
-  summoner1 = summonerRequest[0];
+  console.log('Start: ' + summonerRequest);
 }
 
+
 //Loops through each summoner if multiple
+var completedRequests = 0;
 summonerRequest.forEach(function(summoner) {
-  var url = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
-  console.log(summoner);
-  console.log(url);
+  var summonerSummary = {};
+
+  var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
 
 
-  var summonerInfo = null;
-  request(url, function(error, response, body) {
-    if(error){
-      console.log('error:', error); // Print the error if one occurred
-    }
-    else {
-      console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-      console.log('body:', body); // Print the HTML for the Google homepage.
+  request(urlSummonerName)
+    .then(function(body) {
+      var summonerInfo = JSON.parse(body);
 
-      summonerInfo = JSON.parse(body);
-      console.log(summonerInfo.id);
-
-      response.push(summonerInfo.name);
-      //res.send({ stats: response });
-    }
+      summonerSummary = {
+        name: summonerInfo.name,
+        level: summonerInfo.summonerLevel,
+        accountId: summonerInfo.accountId,
+      };
+      summonerInfoAll.push(summonerInfo.name + ' ' + summonerInfo.summonerLevel);
 
 
+      var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerInfo.accountId}?queue=420&api_key=${API_KEY}&`;
+      return request(urlMatches);
+    })
+    .then(function(body) {
 
-  });
+      var matchHistory = JSON.parse(body);
+
+      summonerSummary.matchHistory = {
+        totalGames: matchHistory.totalGames,
+      }
+
+      //var matches = getAllMatches(summonerSummary);
+
+      //console.log(matches);
+      //
+
+      //console.log(matchHistory.totalGames);
+
+      return getAllMatches(summonerSummary);
+
+    })
+    .then(matches => {
+      //console.log(matches);
+      completedRequests++;
+
+      summonerSummary.mostPlayed = mostPlayed(matches);
+      console.log(summonerSummary);
+
+      if(completedRequests == summonerRequest.length){
+        console.log('complete');
+        res.send({ stats: summonerInfoAll });
+      }
+    })
+  /*  .then(function(matches) {
+      completedRequests++;
+      console.log(matches);
+
+      if(completedRequests == summonerRequest.length){
+        console.log('complete');
+        res.send({ stats: summonerInfoAll });
+      }
+    }) */
+    .catch(function(error) {
+      console.log('Error: ' + error);
+      res.send({ stats: summonerNotFound });
+    })
 
 
-  //response.push(summonerInfo.name + ' - ' + summonerInfo.summonerLevel);
   console.log('');
 });
 
-response.push('67');
-
-console.log(response);
-
-res.send({ stats: response });
 });
+
+function getAllMatches(summonerSummary){
+
+  //var temp = {};
+  var requests = [];
+  var totalRequests = 0;
+
+  for(var i = 0; i < summonerSummary.matchHistory.totalGames; i+=100){
+    totalRequests++;
+    var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerSummary.accountId}?queue=420&beginIndex=${i}&api_key=${API_KEY}&`;
+    requests.push(request(urlMatches));
+  }
+  return(Promise.all(requests)
+    .then(body => {
+      var allMatches = [];
+      //allMatches.push(tempMatches.matches);
+      for(var i = 0; i < totalRequests; i++){
+        var temp = JSON.parse(body[i]);
+        allMatches = allMatches.concat(temp.matches);
+        console.log(allMatches.length);
+      }
+      return allMatches;
+      //return temp;
+    })
+    .catch(function(error) {
+      console.log('Get all matches error: ' + error);
+      return [];
+    })
+  );
+}
+
+function mostPlayed(matches){
+  var mostPlayed = {};
+  var totalCount = 0;
+  matches.forEach(function(match) {
+    totalCount++;
+    mostPlayed[match.champion] = {
+      total: mostPlayed[match.champion] ? mostPlayed[match.champion].total + 1 : 1,
+    };
+  });
+  console.log(mostPlayed);
+  console.log(totalCount);
+  return ({
+    first: 'Vayne',
+    second: 'Lucian',
+    third: 'Yasuo',
+    fourth: 'Riven',
+    fifth: 'Akali',
+  });
+}
