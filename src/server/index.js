@@ -1,4 +1,5 @@
 const API_KEY = require('../../../riot_api_key.js');
+const CHAMPIONS = require('./champions.js');
 
 const express = require('express');
 const os = require('os');
@@ -45,6 +46,7 @@ summonerRequest.forEach(function(summoner) {
     .then(function(body) {
       var summonerInfo = JSON.parse(body);
 
+      //Basic summoner information
       summonerSummary = {
         name: summonerInfo.name,
         level: summonerInfo.summonerLevel,
@@ -53,7 +55,7 @@ summonerRequest.forEach(function(summoner) {
       summonerInfoAll.push(summonerInfo.name + ' ' + summonerInfo.summonerLevel);
 
 
-      var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerInfo.accountId}?queue=420&api_key=${API_KEY}&`;
+      var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerInfo.accountId}?queue=420&api_key=${API_KEY}`;
       return request(urlMatches);
     })
     .then(function(body) {
@@ -63,13 +65,7 @@ summonerRequest.forEach(function(summoner) {
       summonerSummary.matchHistory = {
         totalGames: matchHistory.totalGames,
       }
-
-      //var matches = getAllMatches(summonerSummary);
-
-      //console.log(matches);
-      //
-
-      //console.log(matchHistory.totalGames);
+      console.log(matchHistory.totalGames);
 
       return getAllMatches(summonerSummary);
 
@@ -86,15 +82,6 @@ summonerRequest.forEach(function(summoner) {
         res.send({ stats: summonerInfoAll });
       }
     })
-  /*  .then(function(matches) {
-      completedRequests++;
-      console.log(matches);
-
-      if(completedRequests == summonerRequest.length){
-        console.log('complete');
-        res.send({ stats: summonerInfoAll });
-      }
-    }) */
     .catch(function(error) {
       console.log('Error: ' + error);
       res.send({ stats: summonerNotFound });
@@ -105,6 +92,8 @@ summonerRequest.forEach(function(summoner) {
 });
 
 });
+
+
 
 function getAllMatches(summonerSummary){
 
@@ -127,7 +116,6 @@ function getAllMatches(summonerSummary){
         console.log(allMatches.length);
       }
       return allMatches;
-      //return temp;
     })
     .catch(function(error) {
       console.log('Get all matches error: ' + error);
@@ -143,6 +131,7 @@ function mostPlayed(matches){
     totalCount++;
     mostPlayed[match.champion] = {
       total: mostPlayed[match.champion] ? mostPlayed[match.champion].total + 1 : 1,
+      name: CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : "Not Found",
     };
   });
   console.log(mostPlayed);
