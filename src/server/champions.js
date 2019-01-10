@@ -2,6 +2,9 @@ const CHAMPIONS = {
   '1': {
     name: 'Annie'
   },
+  '2': {
+    name: 'Olaf'
+  },
   '3': {
     name: 'Galio'
   },
@@ -145,6 +148,9 @@ const CHAMPIONS = {
   },
   '55': {
     name: 'Katarina'
+  },
+  '56': {
+    name: 'Nocturne'
   },
   '57': {
     name: 'Maokai'
@@ -311,8 +317,17 @@ const CHAMPIONS = {
   '136': {
     name: 'Aurelion Sol'
   },
+  '141': {
+    name: 'Kayn'
+  },
+  '142': {
+    name: 'Zoe'
+  },
   '143': {
     name: 'Zyra'
+  },
+  '145': {
+    name: "Kai'Sa"
   },
   '150': {
     name: 'Gnar'
@@ -388,6 +403,21 @@ const CHAMPIONS = {
   },
   '432': {
     name: 'Bard'
+  },
+  '497': {
+    name: 'Rakan'
+  },
+  '498': {
+    name: 'Xayah'
+  },
+  '516': {
+    name: 'Ornn'
+  },
+  '518': {
+    name: 'Neeko'
+  },
+  '555': {
+    name: 'Pyke'
   },
 }
 
