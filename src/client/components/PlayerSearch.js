@@ -64,12 +64,12 @@ class PlayerSearch extends React.Component {
   }
 
   searchPlayer = event => {
-    this.props.updatePlayers({players: this.state.playerSearch.split( /[:;!@?#$%^&*()-=|+,]+/g )});
+    this.props.updatePlayers({players: this.state.playerSearch.split( /[:;!@?#$%^&*()=|+,]+/g )});
   }
 
   keyPress = event => {
     if(event.keyCode == 13){
-      this.props.updatePlayers({players: event.target.value.split( /[:;!@?#$%^&*()-=|+,]+/g )});
+      this.props.updatePlayers({players: event.target.value.split( /[:;!@?#$%^&*()=|+,]+/g )});
       console.log(event.target.value.split( /[ ,]+/g ));
     }
   }

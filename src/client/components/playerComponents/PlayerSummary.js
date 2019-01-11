@@ -29,22 +29,22 @@ class PlayerSummary extends React.Component {
         <Grid container spacing={24}>
           <Grid item xs={4}>
             <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
+              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.name} - {x.level}</h1>)}
             </div>
           </Grid>
           <Grid item xs={8}>
             <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
+              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.matchHistory.totalGames}</h1>)}
             </div>
           </Grid>
           <Grid item xs={6}>
             <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
+              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>Favorite: {x.mostPlayed.first}</h1>)}
             </div>
           </Grid>
           <Grid item xs={6}>
             <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x}</h1>)}
+              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.matchHistory.totalGames}</h1>)}
             </div>
           </Grid>
         </Grid>

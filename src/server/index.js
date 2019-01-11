@@ -1,6 +1,7 @@
 const API_KEY = require('../../../riot_api_key.js');
 const CHAMPIONS = require('./champions.js');
 
+const _ = require('lodash');
 const express = require('express');
 const os = require('os');
 const bodyParser = require('body-parser');
@@ -26,6 +27,7 @@ var summonerInfoAll = [];
 var summonerNotFound = [''];
 
 summonerRequest = req.body.stats
+console.log(summonerRequest);
 if(summonerRequest[0] == ''){
     res.send({ stats: summonerNotFound }); //Returns an array with an empty string. Client will see a "summoner not found message"
 }
@@ -52,7 +54,6 @@ summonerRequest.forEach(function(summoner) {
         level: summonerInfo.summonerLevel,
         accountId: summonerInfo.accountId,
       };
-      summonerInfoAll.push(summonerInfo.name + ' ' + summonerInfo.summonerLevel);
 
 
       var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerInfo.accountId}?queue=420&api_key=${API_KEY}`;
@@ -65,17 +66,19 @@ summonerRequest.forEach(function(summoner) {
       summonerSummary.matchHistory = {
         totalGames: matchHistory.totalGames,
       }
-      console.log(matchHistory.totalGames);
+      //console.log(matchHistory.totalGames);
 
       return getAllMatches(summonerSummary);
 
     })
     .then(matches => {
-      //console.log(matches);
+      console.log(matches);
       completedRequests++;
 
       summonerSummary.mostPlayed = mostPlayed(matches);
       console.log(summonerSummary);
+
+      summonerInfoAll.push(summonerSummary);
 
       if(completedRequests == summonerRequest.length){
         console.log('complete');
@@ -125,22 +128,39 @@ function getAllMatches(summonerSummary){
 }
 
 function mostPlayed(matches){
-  var mostPlayed = {};
+  var mostPlayed = [];
   var totalCount = 0;
   matches.forEach(function(match) {
+    var champ = _.remove(mostPlayed, function(x) {
+      return x.id == match.champion;
+    });
+    if(champ.length == 0){
+      mostPlayed.push({
+        id: match.champion,
+        name: CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : "Not Found",
+        totalGames: 1,
+      });
+    }
+    else {
+      mostPlayed.push({
+        id: match.champion,
+        name: champ[0].name,
+        totalGames: champ[0].totalGames + 1,
+      });
+    }
     totalCount++;
-    mostPlayed[match.champion] = {
-      total: mostPlayed[match.champion] ? mostPlayed[match.champion].total + 1 : 1,
-      name: CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : "Not Found",
-    };
   });
+
+  mostPlayed = _.sortBy(mostPlayed, 'totalGames');
+  mostPlayed = _.reverse(mostPlayed);
+
   console.log(mostPlayed);
   console.log(totalCount);
   return ({
-    first: 'Vayne',
-    second: 'Lucian',
-    third: 'Yasuo',
-    fourth: 'Riven',
-    fifth: 'Akali',
+    first: mostPlayed[0].name,
+    second: mostPlayed[1].name,
+    third: mostPlayed[2].name,
+    fourth: mostPlayed[3].name,
+    fifth: mostPlayed[4].name,
   });
 }
