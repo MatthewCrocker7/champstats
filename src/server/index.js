@@ -16,7 +16,14 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
-app.listen(8080, () => console.log('Listening on port 8080!'));
+
+let port = process.env.PORT;
+if (port == null || port == "" ){
+  console.log('Port 8000');
+  port = 8000;
+}
+app.listen(port, () => console.log('Listening on port ' + port + '!'));
+//app.listen(8080, () => console.log('Listening on port 8080!'));
 
 
 //Beginning of summoner lookup
