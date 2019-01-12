@@ -1,4 +1,4 @@
-const API_KEY = require('../../../riot_api_key.js');
+//const API_KEY = require('../../../riot_api_key.js');
 const CHAMPIONS = require('./champions.js');
 
 const _ = require('lodash');
