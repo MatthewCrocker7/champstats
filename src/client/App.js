@@ -17,8 +17,16 @@ const styles = theme => ({
   navBarLoad: {
     marginTop: '0%',
   },
-  textStyle: {
+  textStyleLoaded: {
     color: '#34568f',
+    fontFamily: "Roboto",
+    backgroundColor: '#FFFFFF',
+    textAlign: 'center',
+  },
+  textStyleMain: {
+    color: '#34568f',
+    marginTop: '5%',
+    fontSize: 80,
     fontFamily: "Roboto",
     backgroundColor: '#FFFFFF',
     textAlign: 'center',
@@ -47,7 +55,7 @@ class App extends Component {
 
     return (
       <div className={classes.root}>
-        <Header username={username} textStyle={classes.textStyle}/>
+        <Header username={username} textStyle={players ? classes.textStyleLoaded : classes.textStyleMain}/>
         <div className={players ? classes.navBarLoad : classes.navBarHome } >
         <PlayerSearch players={players}/>
         </div>
@@ -60,7 +68,7 @@ class App extends Component {
 export function Header(props) {
   if(props.username){
     return(
-      <h1 className={props.textStyle}>{`Hello ${props.username}`}, welcome to Champstats.co</h1>
+      <h1 className={props.textStyle}>champstats.gg</h1>
     );
   }
   else {

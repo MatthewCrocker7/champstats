@@ -1,4 +1,5 @@
-const API_KEY = require('../../../riot_api_key.js');
+//const API_KEY = require('../../../riot_api_key.js');
+const API_KEY = process.env.RIOT_API_KEY;
 const CHAMPIONS = require('./champions.js');
 
 const _ = require('lodash');
@@ -16,7 +17,11 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
-app.listen(8080, () => console.log('Listening on port 8080!'));
+
+const port = process.env.PORT || 8080;
+
+app.listen(port, () => console.log('Listening on port ' + port + '!'));
+//app.listen(8080, () => console.log('Listening on port 8080!'));
 
 
 //Beginning of summoner lookup
@@ -29,7 +34,7 @@ var summonerNotFound = [''];
 summonerRequest = req.body.stats
 console.log(summonerRequest);
 if(summonerRequest[0] == ''){
-    res.send({ stats: summonerNotFound }); //Returns an array with an empty string. Client will see a "summoner not found message"
+  res.send({ stats: summonerNotFound }); //Returns an array with an empty string. Client will see a "summoner not found message"
 }
 else {
   console.log('Start: ' + summonerRequest);
