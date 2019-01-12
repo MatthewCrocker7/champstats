@@ -18,7 +18,7 @@ app.use(express.json());
 app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
 
 
-const API_KEY = process.env.RIOT_API_KEY;
+const API_KEY = process.env.RIOT_API_KEY || '';
 console.log('API KEY is: ' + API_KEY);
 const port = process.env.PORT || 8080;
 
