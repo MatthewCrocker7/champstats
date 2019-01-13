@@ -79,7 +79,7 @@ summonerRequest.forEach(function(summoner) {
 
     })
     .then(matches => {
-      console.log(matches);
+      //console.log(matches);
       completedRequests++;
 
       summonerSummary.mostPlayed = mostPlayed(matches);

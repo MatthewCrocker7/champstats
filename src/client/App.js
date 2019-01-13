@@ -68,7 +68,7 @@ class App extends Component {
 export function Header(props) {
   if(props.username){
     return(
-      <h1 className={props.textStyle}>champstats.gg</h1>
+      <h1 className={props.textStyle}>champstats.gg just testing auto deploy</h1>
     );
   }
   else {
