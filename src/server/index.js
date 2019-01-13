@@ -18,7 +18,8 @@ app.use(express.static('dist'));
 app.use(bodyParser.json());
 app.use(express.json());
 
-app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
+//app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
+app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
 
 
 
