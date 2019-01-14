@@ -1,35 +1,41 @@
-//const API_KEY = require('../../../riot_api_key.js');
-const API_KEY = process.env.RIOT_API_KEY || '';
+const API_KEY = require('../../../riot_api_key.js');
+//const API_KEY = process.env.RIOT_API_KEY || '';
 console.log('API KEY is: ' + API_KEY);
 
 const CHAMPIONS = require('./champions.js');
 
 const _ = require('lodash');
 const express = require('express');
-const os = require('os');
 const bodyParser = require('body-parser');
-
 const request = require('request-promise');
+const bottleNeck = require('bottleneck');
 
 const app = express();
-
 app.use(express.static('dist'));
 app.use(bodyParser.json());
 app.use(express.json());
+
+const port = process.env.PORT || 8080;
+app.listen(port, () => console.log('Listening on port ' + port + '!'));
+
+const limiter = new bottleNeck({
+  reservoir: 100,
+  reservoirRefreshAmount: 100,
+  reservoirRefreshInterval: 120 * 1000, //100 calls per 120 seconds
+
+  minTime: 50
+});
 
 const { Pool } = require('pg');
 const pool = new Pool({
   connectionString: 'postgres://flnejcnfxdjgzl:3c608eb6453b88a16211786063037bde47bcab896d70935345ab5100d836c0b2@ec2-23-21-86-22.compute-1.amazonaws.com:5432/dbsrqnf5gevqua',
   ssl: true
 });
+//DB1 = player followed by all match matchIds
+//DB2 = matchId
 
+//Beginning of all methods
 app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
-
-
-
-const port = process.env.PORT || 8080;
-app.listen(port, () => console.log('Listening on port ' + port + '!'));
-
 
 //Beginning of summoner lookup
 app.post('/api/champstats/playerSearch', function(req, res){
@@ -56,7 +62,7 @@ summonerRequest.forEach(function(summoner) {
   var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
 
 
-  request(urlSummonerName)
+  limiter.schedule(() => request(urlSummonerName))
     .then(function(body) {
       var summonerInfo = JSON.parse(body);
 
@@ -72,7 +78,7 @@ summonerRequest.forEach(function(summoner) {
       return getAllMatches(0, [], summonerSummary.accountId);
     })
     .then(matches => {
-      console.log(matches);
+      //console.log(matches);
       completedRequests++;
 
       summonerSummary.matchHistory = addMatchIds(matches);
@@ -101,7 +107,7 @@ function getAllMatches(beginIndex, curMatches, accountId){
   var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&api_key=${API_KEY}&`;
 
   return(
-    request(urlMatches)
+    limiter.schedule(() => request(urlMatches))
       .then(function(body){
         var result = JSON.parse(body);
         var matches = curMatches.concat(result.matches);
@@ -159,14 +165,14 @@ function mostPlayed(matches){
   mostPlayed = _.sortBy(mostPlayed, 'totalGames');
   mostPlayed = _.reverse(mostPlayed);
 
-  console.log(mostPlayed);
-  console.log(totalCount);
+//  console.log(mostPlayed);
+  console.log('total count check: ' + totalCount);
   return ({
-    first: mostPlayed[0].name,
-    second: mostPlayed[1].name,
-    third: mostPlayed[2].name,
-    fourth: mostPlayed[3].name,
-    fifth: mostPlayed[4].name,
+    first: mostPlayed[0],
+    second: mostPlayed[1],
+    third: mostPlayed[2],
+    fourth: mostPlayed[3],
+    fifth: mostPlayed[4],
   });
 }
 
