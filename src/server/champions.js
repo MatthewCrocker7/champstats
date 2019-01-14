@@ -266,6 +266,9 @@ const CHAMPIONS = {
   '106': {
     name: 'Volibear'
   },
+  '107': {
+    name: 'Rengar'
+  },
   '110': {
     name: 'Varus'
   },
