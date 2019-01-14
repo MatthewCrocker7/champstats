@@ -1,5 +1,5 @@
-const API_KEY = require('../../../riot_api_key.js');
-//const API_KEY = process.env.RIOT_API_KEY || '';
+//const API_KEY = require('../../../riot_api_key.js');
+const API_KEY = process.env.RIOT_API_KEY || '';
 console.log('API KEY is: ' + API_KEY);
 
 const CHAMPIONS = require('./champions.js');
