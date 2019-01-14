@@ -39,7 +39,7 @@ class PlayerSummary extends React.Component {
           </Grid>
           <Grid item xs={6}>
             <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>Favorite: {x.mostPlayed.first}</h1>)}
+              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>Favorite: {x.mostPlayed.first.name} - {x.mostPlayed.first.totalGames}</h1>)}
             </div>
           </Grid>
           <Grid item xs={6}>
