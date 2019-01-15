@@ -52,6 +52,7 @@ app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
 
 //Beginning of summoner lookup
 app.post('/api/champstats/playerSearch', function(req, res){
+
 req.setTimeout(0);
 var summonerRequest; //Summoner(s) to be looked up
 var summonerInfoAll = [];
@@ -67,7 +68,7 @@ else {
 }
 
 
-//Loops through each summoner if multiple
+//Loops through each player if multiple
 var completedRequests = 0;
 summonerRequest.forEach(function(summoner) {
   var summonerSummary = {};
@@ -134,7 +135,7 @@ function getAllMatches(beginIndex, curMatches, accountId){
         var result = JSON.parse(response.body);
         var matches = curMatches.concat(result.matches);
 
-        if(result.totalGames > beginIndex + 100){
+        if(result.totalGames >= beginIndex + 100){
           return(getAllMatches(beginIndex + 100, matches, accountId));
         }
         else {
@@ -144,7 +145,7 @@ function getAllMatches(beginIndex, curMatches, accountId){
       })
       .catch(function(error) {
         end = process.hrtime();
-        console.log('Seconds elapsed: ' + ((end[0]-start[0])/1000));
+        console.log('Seconds elapsed: ' + (end[0]-start[0]));
         console.log('Get all matches error: ' + error);
         return [];
       })
