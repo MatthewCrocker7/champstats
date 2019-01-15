@@ -1,11 +1,11 @@
-# simple-react-full-stack
+# champstats
 
 [![Build Status](https://travis-ci.org/crsandeep/simple-react-full-stack.svg?branch=master)](https://travis-ci.org/crsandeep/simple-react-full-stack)
 [![Greenkeeper badge](https://badges.greenkeeper.io/crsandeep/simple-react-full-stack.svg)](https://greenkeeper.io/)
 
-This is a boilerplate to build a full stack web application using React, Node.js, Express and Webpack. It is also configured with webpack-dev-server, eslint, prettier and babel.
+This is a League of Legends web application built with React, Redux, Node.js, Express and Webpack, and hosted by Heroku. It is also configured with webpack-dev-server, eslint, prettier and babel.
 
-- [simple-react-full-stack](#simple-react-full-stack)
+- [champstats](#champstats)
   - [Introduction](#introduction)
     - [Development mode](#development-mode)
     - [Production mode](#production-mode)
@@ -24,9 +24,11 @@ This is a boilerplate to build a full stack web application using React, Node.js
 
 ## Introduction
 
-[Create React App](https://github.com/facebook/create-react-app) is a quick way to get started with React development and it requires no build configuration. But it completely hides the build config which makes it difficult to extend. It also requires some additional work to integrate it with an existing Node.js/Express backend application.
+[ChampStats.gg](https://github.com/MatthewCrocker7/champstats) is a web application for tracking player's league of legends statistics.
 
-This is a simple full stack [React](https://reactjs.org/) application with a [Node.js](https://nodejs.org/en/) and [Express](https://expressjs.com/) backend. Client side code is written in React and the backend API is written using Express. This application is configured with [Airbnb's ESLint rules](https://github.com/airbnb/javascript) and formatted through [prettier](https://prettier.io/).
+ChampStats isn’t endorsed by Riot Games and doesn’t reflect the views or opinions of Riot Games
+or anyone officially involved in producing or managing League of Legends. League of Legends and Riot Games are
+trademarks or registered trademarks of Riot Games, Inc. League of Legends © Riot Games, Inc.
 
 ### Development mode
 
@@ -40,10 +42,10 @@ In the production mode, we will have only 1 server running. All the client side 
 
 ```bash
 # Clone the repository
-git clone https://github.com/crsandeep/simple-react-full-stack
+git clone https://github.com/MatthewCrocker7/champstats
 
 # Go inside the directory
-cd simple-react-full-stack
+cd champstats
 
 # Install dependencies
 yarn (or npm install)
