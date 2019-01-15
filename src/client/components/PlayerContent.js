@@ -37,7 +37,6 @@ class PlayerContent extends React.Component{
   componentDidMount() {
     fetch('/api/champstats/playerSearch', {
         method: 'POST',
-        timeout: 0,
         body: JSON.stringify({
           stats: this.props.players,
         }),
@@ -48,7 +47,11 @@ class PlayerContent extends React.Component{
         .then(res => res.json())
         .then(user => this.setState({
           stats: user.stats,
-        }));
+        }))
+        .catch(error => {
+          console.log('Error: ' + error);
+          this.setState({ stats: null });
+        })
   }
 
   componentDidUpdate(prevProps) {
@@ -56,6 +59,7 @@ class PlayerContent extends React.Component{
       this.setState({stats: null});
       fetch('/api/champstats/playerSearch', {
           method: 'POST',
+          timeout: 0,
           body: JSON.stringify({
             stats: this.props.players,
           }),
@@ -66,7 +70,11 @@ class PlayerContent extends React.Component{
           .then(res => res.json())
           .then(user => this.setState({
             stats: user.stats,
-          }));
+          }))
+          .catch(error => {
+            console.log('Error: ' + error);
+            this.setState({ stats: null });
+          })
     }
   }
 

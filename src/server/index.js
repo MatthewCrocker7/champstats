@@ -1,6 +1,6 @@
 //const API_KEY = require('../../../riot_api_key.js');
 const API_KEY = process.env.RIOT_API_KEY || '';
-console.log('API KEY is: ' + API_KEY);
+//console.log('API KEY is: ' + API_KEY);
 
 const CHAMPIONS = require('./champions.js');
 
@@ -43,11 +43,7 @@ const limiterMatchSearch = new bottleNeck({
 limiterSummonerSearch.chain(limiterAppRate);
 limiterMatchSearch.chain(limiterAppRate);
 
-const { Pool } = require('pg');
-const pool = new Pool({
-  connectionString: 'postgres://flnejcnfxdjgzl:3c608eb6453b88a16211786063037bde47bcab896d70935345ab5100d836c0b2@ec2-23-21-86-22.compute-1.amazonaws.com:5432/dbsrqnf5gevqua',
-  ssl: true
-});
+
 //DB1 = player followed by all match matchIds
 //DB2 = matchId
 
@@ -82,7 +78,7 @@ summonerRequest.forEach(function(summoner) {
     resolveWithFullResponse: true
   };
 
-  limiterSummonerSearch.schedule(() => request(requestOptions))
+  limiterAppRate.schedule({id: summoner}, () => request(requestOptions))
     .then(function(response) {
       logResponseTime(response);
       var summonerInfo = JSON.parse(response.body);
@@ -122,20 +118,17 @@ summonerRequest.forEach(function(summoner) {
 
 });
 
-var event = 0;
-
 function getAllMatches(beginIndex, curMatches, accountId){
-  event++;
-  console.log(event);
   start = process.hrtime();
   var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&api_key=${API_KEY}&`;
   var requestOptions = {
     uri: urlMatches,
     resolveWithFullResponse: true
   };
+  var jobId = beginIndex + '-' + accountId;
 
   return(
-    limiterMatchSearch.schedule(() => request(requestOptions))
+    limiterAppRate.schedule({id: jobId}, () => request(requestOptions))
       .then(function(response){
         logResponseTime(response);
         var result = JSON.parse(response.body);
@@ -151,7 +144,7 @@ function getAllMatches(beginIndex, curMatches, accountId){
       })
       .catch(function(error) {
         end = process.hrtime();
-        console.log('Seconds elapsed: ' + ((end[1]-start[1])/1000));
+        console.log('Seconds elapsed: ' + ((end[0]-start[0])/1000));
         console.log('Get all matches error: ' + error);
         return [];
       })
