@@ -37,6 +37,7 @@ class PlayerContent extends React.Component{
   componentDidMount() {
     fetch('/api/champstats/playerSearch', {
         method: 'POST',
+        timeout: 0,
         body: JSON.stringify({
           stats: this.props.players,
         }),
