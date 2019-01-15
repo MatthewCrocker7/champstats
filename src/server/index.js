@@ -18,13 +18,30 @@ app.use(express.json());
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log('Listening on port ' + port + '!'));
 
-const limiter = new bottleNeck({
+var start = process.hrtime();
+var end = process.hrtime();
+
+const limiterAppRate = new bottleNeck({
   reservoir: 100,
   reservoirRefreshAmount: 100,
-  reservoirRefreshInterval: 120 * 1000, //100 calls per 120 seconds
+  reservoirRefreshInterval: 300 * 1000, //app rate = 100 calls per 120 seconds, set to 99/125 secs for buffer
 
+  maxConcurrent: 1,
   minTime: 50
 });
+const limiterSummonerSearch = new bottleNeck({
+  //Limited to 2000 calls per 60 seconds
+  maxConcurrent: 1,
+  minTime: .03
+});
+const limiterMatchSearch = new bottleNeck({
+  //Limited to 1000 calls per 10 seconds
+  maxConcurrent: 1,
+  minTime: .01
+});
+//Ensures request checks for both total app rate and specific method app rate
+limiterSummonerSearch.chain(limiterAppRate);
+limiterMatchSearch.chain(limiterAppRate);
 
 const { Pool } = require('pg');
 const pool = new Pool({
@@ -39,7 +56,7 @@ app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
 
 //Beginning of summoner lookup
 app.post('/api/champstats/playerSearch', function(req, res){
-
+req.setTimeout(0);
 var summonerRequest; //Summoner(s) to be looked up
 var summonerInfoAll = [];
 var summonerNotFound = [''];
@@ -60,11 +77,15 @@ summonerRequest.forEach(function(summoner) {
   var summonerSummary = {};
 
   var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
+  var requestOptions = {
+    uri: urlSummonerName,
+    resolveWithFullResponse: true
+  };
 
-
-  limiter.schedule(() => request(urlSummonerName))
-    .then(function(body) {
-      var summonerInfo = JSON.parse(body);
+  limiterSummonerSearch.schedule(() => request(requestOptions))
+    .then(function(response) {
+      logResponseTime(response);
+      var summonerInfo = JSON.parse(response.body);
 
       //Basic summoner information
       summonerSummary = {
@@ -73,8 +94,6 @@ summonerRequest.forEach(function(summoner) {
         accountId: summonerInfo.accountId,
       };
 
-
-      //var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerInfo.accountId}?queue=420&api_key=${API_KEY}`;
       return getAllMatches(0, [], summonerSummary.accountId);
     })
     .then(matches => {
@@ -103,13 +122,23 @@ summonerRequest.forEach(function(summoner) {
 
 });
 
+var event = 0;
+
 function getAllMatches(beginIndex, curMatches, accountId){
+  event++;
+  console.log(event);
+  start = process.hrtime();
   var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&api_key=${API_KEY}&`;
+  var requestOptions = {
+    uri: urlMatches,
+    resolveWithFullResponse: true
+  };
 
   return(
-    limiter.schedule(() => request(urlMatches))
-      .then(function(body){
-        var result = JSON.parse(body);
+    limiterMatchSearch.schedule(() => request(requestOptions))
+      .then(function(response){
+        logResponseTime(response);
+        var result = JSON.parse(response.body);
         var matches = curMatches.concat(result.matches);
 
         if(result.totalGames > beginIndex + 100){
@@ -121,6 +150,8 @@ function getAllMatches(beginIndex, curMatches, accountId){
         }
       })
       .catch(function(error) {
+        end = process.hrtime();
+        console.log('Seconds elapsed: ' + ((end[1]-start[1])/1000));
         console.log('Get all matches error: ' + error);
         return [];
       })
@@ -174,6 +205,18 @@ function mostPlayed(matches){
     fourth: mostPlayed[3],
     fifth: mostPlayed[4],
   });
+}
+
+function logResponseTime(response){
+  console.log('');
+  end = process.hrtime();
+  console.log('Seconds elapsed: ' + (end[0]-start[0]));
+  console.log('Date: '+ response.headers.date);
+  console.log(response.headers);
+  /*console.log('App Rate: '+ response.headers.x-app-rate-limit);
+  console.log('App Rate Count: '+ response.headers.x-app-rate-limit-count);
+  console.log('Method Rate: '+ response.headers.x-method-rate-limit);
+  console.log('Method Rate Count: '+ response.headers.x-method-rate-limit-count);*/
 }
 
 //THIS FUNCTION IS DEPRECATED, KEEPING FOR REFERENCE
