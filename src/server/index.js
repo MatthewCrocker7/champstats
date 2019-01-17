@@ -1,6 +1,4 @@
-//const API_KEY = require('../../../riot_api_key.js');
 const API_KEY = process.env.RIOT_API_KEY || '';
-//console.log('API KEY is: ' + API_KEY);
 
 const CHAMPIONS = require('./champions.js');
 
@@ -8,7 +6,7 @@ const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request-promise');
-const bottleNeck = require('bottleneck');
+const Bottleneck = require('bottleneck');
 
 const app = express();
 app.use(express.static('dist'));
@@ -18,109 +16,97 @@ app.use(express.json());
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log('Listening on port ' + port + '!'));
 
-var start = process.hrtime();
-var end = process.hrtime();
-
-const limiterAppRate = new bottleNeck({
+const limiterAppRate = new Bottleneck({
   reservoir: 100,
   reservoirRefreshAmount: 100,
-  reservoirRefreshInterval: 300 * 1000, //app rate = 100 calls per 120 seconds, set to 99/125 secs for buffer
+  //app rate = 100 calls per 120 seconds, set to 99/125 secs for buffer
+  reservoirRefreshInterval: 120 * 1000, // fixed (120*1000 / 100 === )
 
   maxConcurrent: 1,
   minTime: 50
 });
-const limiterSummonerSearch = new bottleNeck({
+const limiterSummonerSearch = new Bottleneck({
   //Limited to 2000 calls per 60 seconds
   maxConcurrent: 1,
-  minTime: .03
+  minTime: 30 // fixed (60*1000 / 2000 === 30)
 });
-const limiterMatchSearch = new bottleNeck({
+const limiterMatchSearch = new Bottleneck({
   //Limited to 1000 calls per 10 seconds
   maxConcurrent: 1,
-  minTime: .01
+  minTime: 10 // fixed (10*1000 / 1000 === 10)
 });
-//Ensures request checks for both total app rate and specific method app rate
+// Unused!!
 limiterSummonerSearch.chain(limiterAppRate);
 limiterMatchSearch.chain(limiterAppRate);
 
-
-//DB1 = player followed by all match matchIds
-//DB2 = matchId
+var t0 = Date.now()
+setInterval(async function () {
+  const reservoir = await limiterAppRate.currentReservoir()
+  console.log(`${Math.round((Date.now() - t0) / 1000)}s, reservoir: ${reservoir}`)
+}, 5000)
 
 //Beginning of all methods
 app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
 
 //Beginning of summoner lookup
-app.post('/api/champstats/playerSearch', function(req, res){
+app.post('/api/champstats/playerSearch', async function(req, res){
+  req.setTimeout(0);
+  var exitNotFound = function () {
+    // probably want to return a 404 here
+    return res.send({ stats: [''] });
+  }
 
-req.setTimeout(0);
-var summonerRequest; //Summoner(s) to be looked up
-var summonerInfoAll = [];
-var summonerNotFound = [''];
-
-summonerRequest = req.body.stats
-console.log(summonerRequest);
-if(summonerRequest[0] == ''){
-  res.send({ stats: summonerNotFound }); //Returns an array with an empty string. Client will see a "summoner not found message"
-}
-else {
+  var summonerRequest = req.body.stats
+  console.log(summonerRequest);
+  if (summonerRequest[0] == ''){
+    return exitNotFound();
+  }
   console.log('Start: ' + summonerRequest);
-}
 
+  //Loops through each player if multiple
+  try {
+    var promises = summonerRequest.map(async function(summoner) {
+      var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
+      var requestOptions = {
+        uri: urlSummonerName,
+        resolveWithFullResponse: true
+      };
+      var start = process.hrtime();
 
-//Loops through each player if multiple
-var completedRequests = 0;
-summonerRequest.forEach(function(summoner) {
-  var summonerSummary = {};
-
-  var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
-  var requestOptions = {
-    uri: urlSummonerName,
-    resolveWithFullResponse: true
-  };
-
-  limiterAppRate.schedule({id: summoner}, () => request(requestOptions))
-    .then(function(response) {
-      logResponseTime(response);
+      var response = await limiterAppRate.schedule({id: summoner}, () => request(requestOptions))
+      // logResponseTime(start, response);
       var summonerInfo = JSON.parse(response.body);
 
-      //Basic summoner information
+      var matches = await getAllMatches(0, [], summonerInfo.accountId);
+      // console.log(matches);
+
       summonerSummary = {
         name: summonerInfo.name,
         level: summonerInfo.summonerLevel,
         accountId: summonerInfo.accountId,
+        matchHistory: {
+          totalGames: matches.length,
+          // Commented this out because it's a massive payload
+          // is it useful?
+          // matchIds: matches.map(match => match.gameId)
+        },
+        mostPlayed: mostPlayed(matches)
       };
+      console.log('DONE', summonerSummary.name);
 
-      return getAllMatches(0, [], summonerSummary.accountId);
+      return summonerSummary;
     })
-    .then(matches => {
-      //console.log(matches);
-      completedRequests++;
+    var summaries = await Promise.all(promises);
+    console.log('Complete');
+    return res.send({ stats: summaries });
 
-      summonerSummary.matchHistory = addMatchIds(matches);
-      summonerSummary.mostPlayed = mostPlayed(matches);
-      console.log(summonerSummary);
-
-      summonerInfoAll.push(summonerSummary);
-
-      if(completedRequests == summonerRequest.length){
-        console.log('Complete');
-        res.send({ stats: summonerInfoAll });
-      }
-    })
-    .catch(function(error) {
-      console.log('Error: ' + error);
-      res.send({ stats: summonerNotFound });
-    })
-
-
-  console.log('');
-});
-
+  } catch(error) {
+    console.log('Error: ', error);
+    return exitNotFound();
+  }
 });
 
 function getAllMatches(beginIndex, curMatches, accountId){
-  start = process.hrtime();
   var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&api_key=${API_KEY}&`;
   var requestOptions = {
     uri: urlMatches,
@@ -128,82 +114,57 @@ function getAllMatches(beginIndex, curMatches, accountId){
   };
   var jobId = beginIndex + '-' + accountId;
 
-  return(
-    limiterAppRate.schedule({id: jobId}, () => request(requestOptions))
-      .then(function(response){
-        logResponseTime(response);
-        var result = JSON.parse(response.body);
-        var matches = curMatches.concat(result.matches);
+  return async function () {
+    try {
+      var start = process.hrtime();
+      var response = await limiterAppRate.schedule({id: jobId}, () => request(requestOptions))
+      // logResponseTime(start, response);
+      var result = JSON.parse(response.body);
+      var matches = curMatches.concat(result.matches);
 
-        if(result.totalGames >= beginIndex + 100){
-          return(getAllMatches(beginIndex + 100, matches, accountId));
-        }
-        else {
-          console.log('match length: ' + matches.length);
-          return matches;
-        }
-      })
-      .catch(function(error) {
-        end = process.hrtime();
-        console.log('Seconds elapsed: ' + (end[0]-start[0]));
-        console.log('Get all matches error: ' + error);
-        return [];
-      })
-  );
-}
-
-function addMatchIds(matches){
-  var matchIds = [];
-  matches.forEach(function(match){
-    matchIds.push(match.gameId);
-  });
-  return ({
-    totalGames: matchIds.length,
-    matchIds: matchIds,
-  });
+      if(result.totalGames >= beginIndex + 100){
+        return(getAllMatches(beginIndex + 100, matches, accountId));
+      }
+      else {
+        console.log('match length: ' + matches.length);
+        return matches;
+      }
+    } catch(error) {
+      var end = process.hrtime();
+      console.log('Seconds elapsed: ' + (end[0]-start[0]));
+      console.log('Get all matches error: ', error);
+      return [];
+    }
+  }()
 }
 
 function mostPlayed(matches){
-  var mostPlayed = [];
-  var totalCount = 0;
-  matches.forEach(function(match) {
-    var champ = _.remove(mostPlayed, function(x) {
-      return x.id == match.champion;
-    });
-    if(champ.length == 0){
-      mostPlayed.push({
-        id: match.champion,
-        name: CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : "Not Found",
-        totalGames: 1,
-      });
+  var perChampion = matches.reduce(function (acc, match) {
+    var champion = CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : "Not Found"
+    if (acc[champion] == null) {
+      acc[champion] = 0
     }
-    else {
-      mostPlayed.push({
-        id: match.champion,
-        name: champ[0].name,
-        totalGames: champ[0].totalGames + 1,
-      });
-    }
-    totalCount++;
-  });
+    acc[champion]++
+    return acc
+  }, {})
 
-  mostPlayed = _.sortBy(mostPlayed, 'totalGames');
-  mostPlayed = _.reverse(mostPlayed);
+  var mostPlayed = Object.keys(perChampion).map(champion => ({ champion, totalGames: perChampion[champion] }))
+  mostPlayed.sort(function (a, b) {
+    return b.totalGames - a.totalGames
+  })
 
-//  console.log(mostPlayed);
-  console.log('total count check: ' + totalCount);
   return ({
-    first: mostPlayed[0],
-    second: mostPlayed[1],
-    third: mostPlayed[2],
-    fourth: mostPlayed[3],
-    fifth: mostPlayed[4],
+    first: mostPlayed[0].champion,
+    second: mostPlayed[1].champion,
+    third: mostPlayed[2].champion,
+    fourth: mostPlayed[3].champion,
+    fifth: mostPlayed[4].champion,
   });
 }
 
-function logResponseTime(response){
+function logResponseTime(start, response){
   console.log('');
-  end = process.hrtime();
+  var end = process.hrtime();
   console.log('Seconds elapsed: ' + (end[0]-start[0]));
   console.log('Date: '+ response.headers.date);
   console.log(response.headers);
@@ -212,34 +173,3 @@ function logResponseTime(response){
   console.log('Method Rate: '+ response.headers.x-method-rate-limit);
   console.log('Method Rate Count: '+ response.headers.x-method-rate-limit-count);*/
 }
-
-//THIS FUNCTION IS DEPRECATED, KEEPING FOR REFERENCE
-function oldGetAllMatches(summonerSummary){
-
-  //var temp = {};
-  var requests = [];
-  var totalRequests = 0;
-
-  for(var i = 0; i < summonerSummary.matchHistory.totalGames; i+=100){
-    totalRequests++;
-    var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${summonerSummary.accountId}?queue=420&beginIndex=${i}&api_key=${API_KEY}&`;
-    requests.push(request(urlMatches));
-  }
-  return(Promise.all(requests)
-    .then(body => {
-      var allMatches = [];
-      //allMatches.push(tempMatches.matches);
-      for(var i = 0; i < totalRequests; i++){
-        var temp = JSON.parse(body[i]);
-        allMatches = allMatches.concat(temp.matches);
-        console.log(allMatches.length);
-      }
-      return allMatches;
-    })
-    .catch(function(error) {
-      console.log('Get all matches error: ' + error);
-      return [];
-    })
-  );
-}
-/////////
