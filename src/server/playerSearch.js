@@ -27,6 +27,29 @@ const limiterMatchSearch = new Bottleneck({
 limiterSummonerSearch.chain(limiterAppRate);
 limiterMatchSearch.chain(limiterAppRate);
 
+limiterAppRate.on("failed", async (error, jobInfo) => {
+  const id = jobInfo.options.id;
+
+  var header = error.response.headers;
+  var retryTimer = header['retry-after'];
+  var appRate = header['x-app-rate-limit'].split(/[:,]+/g);
+  console.log('Latest App Rate: ' + appRate);
+
+  //Update app rate if needed
+  limiterAppRate.updateSettings({
+    reservoir: appRate[2],
+    reservoirRefreshAmount: appRate[2],
+    reservoirRefreshInterval: appRate[3] * 1000,
+
+    maxConcurrent: 1,
+    minTime: (appRate[1]/appRate[0])*1000
+  });
+
+  console.log(`Job ${id} failed: ${error}`);
+  console.log('Retry after: ' + retryTimer);
+  return retryTimer * 1000;
+});
+
 var t0 = Date.now();
 setInterval(async function(){
   const reservoir = await limiterAppRate.currentReservoir();
@@ -100,13 +123,11 @@ function getAllMatches(beginIndex, curMatches, accountId){
         return(getAllMatches(beginIndex + 100, matches, accountId));
       }
       else {
-        console.log('match length: ' + matches.length);
         return matches;
       }
     } catch(error){
       var end = process.hrtime();
       console.log('Seconds elapsed: ' + (end[0]-start[0]));
-      console.log('Get all matches error: ', error);
       return [];
     }
   }()
@@ -150,8 +171,6 @@ function mostPlayed(matches){
   mostPlayed = _.sortBy(mostPlayed, 'totalGames');
   mostPlayed = _.reverse(mostPlayed);
 
-//  console.log(mostPlayed);
-  console.log('total count check: ' + totalCount);
   return ({
     first: mostPlayed[0],
     second: mostPlayed[1],
