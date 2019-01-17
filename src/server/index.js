@@ -10,6 +10,7 @@ app.use(express.json());
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log('Listening on port ' + port + '!'));
 
+
 //Beginning of all methods
 app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
 
