@@ -1,7 +1,7 @@
-var playerSearch = require('./playerSearch.js');
 const express = require('express');
 const bodyParser = require('body-parser');
 const uuidv1 = require('uuid/v1');
+const playerSearch = require('./playerSearch.js');
 
 const app = express();
 app.use(express.static('dist'));
@@ -30,10 +30,14 @@ app.get('/api/champstats/playerSearch/:searchID', async function(req, res){
     delete allResults[req.params.searchID];
 
     if(result !== undefined){
+      if(result === 404){
+        console.log('404 error, not found');
+        return res.sendStatus(404);
+      }
       return res.send({stats: result.stats});
     }
-  }catch(error){
-    console.log('Get Error: ', error);
-  }
 
+  }catch(error){
+    console.log(error);
+  }
 });

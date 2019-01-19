@@ -64,6 +64,14 @@ class PlayerContent extends React.Component{
             'Content-Type': 'application/json',
           },
         });
+        if( !response.ok ){
+          this.setState({
+            searchID: null,
+            stats: response.status,
+          });
+          clearInterval(interval);
+          throw Error(response.statusText);
+        }
         const user = await response.json();
         this.setState({
           searchID: null,
@@ -105,7 +113,7 @@ class PlayerContent extends React.Component{
 }
 
 function Stats(props){
-  if(props.stats[0] === ''){
+  if(props.stats === 404){
     return(
       <h1 className={props.textStyle}>Player not found. Please search again.</h1>
     )

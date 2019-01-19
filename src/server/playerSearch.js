@@ -1,74 +1,22 @@
-//const API_KEY = require('../../../riot_api_key.js');
-const API_KEY = process.env.RIOT_API_KEY || '';
+const API_KEY = require('../../../riot_api_key.js');
+//const API_KEY = process.env.RIOT_API_KEY || '';
 const CHAMPIONS = require('./champions.js');
 const request = require('request-promise');
 const _ = require('lodash');
-const Bottleneck = require('bottleneck');
 const RiotRateLimiter = require('riot-ratelimiter');
 const limiter = new RiotRateLimiter();
 
-const limiterAppRate = new Bottleneck({
-  reservoir: 100,
-  reservoirRefreshAmount: 100,
-  reservoirRefreshInterval: 120 * 1000, //app rate = 100 calls per 120 seconds, set to 99/125 secs for buffer
-
-  maxConcurrent: 1,
-  minTime: 50
-});
-const limiterSummonerSearch = new Bottleneck({
-  //Limited to 2000 calls per 60 seconds
-  maxConcurrent: 1,
-  minTime: 30
-});
-const limiterMatchSearch = new Bottleneck({
-  //Limited to 1000 calls per 10 seconds
-  maxConcurrent: 1,
-  minTime: 10
-});
-//Ensures request checks for both total app rate and specific method app rate
-limiterSummonerSearch.chain(limiterAppRate);
-limiterMatchSearch.chain(limiterAppRate);
-
-limiterAppRate.on("failed", async (error, jobInfo) => {
-  const id = jobInfo.options.id;
-
-  var header = error.response.headers;
-  var retryTimer = header['retry-after'];
-  var appRate = header['x-app-rate-limit'].split(/[:,]+/g);
-  console.log('Latest App Rate: ' + appRate);
-
-  //Update app rate if needed
-  limiterAppRate.updateSettings({
-    reservoir: appRate[2],
-    reservoirRefreshAmount: appRate[2],
-    reservoirRefreshInterval: appRate[3] * 1000,
-
-    maxConcurrent: 1,
-    minTime: (appRate[1]/appRate[0])*1000
-  });
-
-  console.log(`Job ${id} failed: ${error}`);
-  console.log('Retry after: ' + retryTimer);
-  return retryTimer * 1000;
-});
-
-var t0 = Date.now();
-setInterval(async function(){
-  const reservoir = await limiterAppRate.currentReservoir();
-  console.log(`${Math.round((Date.now() - t0) / 1000)}s`);
-}, 5000);
-
 //Beginning of summoner lookup
 var playerSearch = async function(req){
-  var exitNotFound = function(){
-    return (['']); //Look into returning a 404 instead
+  var exitNotFound = function(statusCode){
+    return (statusCode); //Look into returning a 404 instead
   }
 
   var summonerRequest = req.body.players; //Summoner(s) to be looked up
-  console.log(summonerRequest);
   if (summonerRequest[0] == ''){
-    return exitNotFound();
+    return exitNotFound(404);
   }
+  var t0 = Date.now();
   console.log('Start: ' + summonerRequest);
 
   try{
@@ -104,13 +52,15 @@ var playerSearch = async function(req){
     })
     var summonerSummaries = await Promise.all(promises);
     console.log('Complete!');
+    console.log(`Elapsed search time: ${Math.round((Date.now() - t0) / 1000)}s`);
     return ({
       stats: summonerSummaries,
      });
 
   } catch(error){
-    console.log('Error: ', error);
-    return exitNotFound();
+    var errorCode = error.statusCode;
+    console.log('Error: ' + error);
+    return exitNotFound(errorCode);
   }
 }
 
