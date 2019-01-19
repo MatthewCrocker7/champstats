@@ -31,65 +31,74 @@ const mapStateToProps = state => {
 
 class PlayerContent extends React.Component{
   state = {
+    searchID: null,
     stats: null,
   };
 
-  componentDidMount() {
-    fetch('/api/champstats/playerSearch', {
+  async searchPlayer() {
+    try{
+      const response = await fetch('/api/champstats/initiatePlayerSearch', {
         method: 'POST',
-        timeout: 0,
         body: JSON.stringify({
-          stats: this.props.players,
+          players: this.props.players,
         }),
         headers: {
           'Content-Type': 'application/json',
-        },
-      })
-        .then(res => res.json())
-        .then(user => this.setState({
-          stats: user.stats,
-        }))
-        .catch(error => {
-          console.log('Error: ' + error);
-          this.setState({ stats: null });
-        })
+        }
+      });
+      const user = await response.json();
+      this.setState({ searchID: user.searchID });
+      console.log('SearchID is: ' + this.state.searchID);
+    }catch(error){
+      console.log('Search Player Error: ', error);
+      this.setState({ searchID: null });
+    }
   }
 
-  componentDidUpdate(prevProps) {
-    if(prevProps.players != this.props.players){
-      this.setState({stats: null});
-      fetch('/api/champstats/playerSearch', {
-          method: 'POST',
-          timeout: 0,
-          body: JSON.stringify({
-            stats: this.props.players,
-          }),
+  async getData() {
+    try{
+      var interval = setInterval(async () => {
+        const response = await fetch(`/api/champstats/playerSearch/${this.state.searchID}`,{
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-        })
-          .then(res => res.json())
-          .then(user => this.setState({
-            stats: user.stats,
-          }))
-          .catch(error => {
-            console.log('Error: ' + error);
-            this.setState({ stats: null });
-          })
+        });
+        const user = await response.json();
+        this.setState({
+          searchID: null,
+          stats: user.stats,
+        });
+        console.log('Data Retreived, end interval.');
+        clearInterval(interval);
+      }, 10000);
+    }catch(error){
+      console.log('GetData Error: ', error);
+    }
+  }
+
+  componentDidMount() {
+    this.searchPlayer();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if(prevProps.players != this.props.players){
+      this.setState({stats: null});
+      this.searchPlayer();
+    }
+    if(prevState.searchID != this.state.searchID && this.state.searchID){
+      this.getData();
     }
   }
 
   render(){
     const { classes, players, selectedNav } = this.props;
-    const { stats } = this.state;
+    const { searchID, stats } = this.state;
 
     return(
       <div className={classes.root}>
-        {stats ?
-          <Stats stats={stats} selected={selectedNav} textStyle={classes.textStyle}/>
-          :
-          <h1 className={classes.textStyle}>Loading... please wait.</h1>
-        }
+        {searchID && <h1 className={classes.textStyle}>Loading summoner data... this may take a few minutes.</h1>}
+        {stats && <Stats stats={stats} selected={selectedNav} textStyle={classes.textStyle}/>}
       </div>
     );
   }
