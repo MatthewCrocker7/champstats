@@ -13,8 +13,6 @@ app.listen(port, () => console.log('Listening on port ' + port + '!'));
 
 var allResults = {};
 
-const timeout = promisify(setTimeout);
-
 //Beginning of all methods
 app.get('/api/getUsername', (req, res) => res.send({ username: 'Summoner' }));
 
