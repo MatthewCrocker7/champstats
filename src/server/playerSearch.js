@@ -1,95 +1,87 @@
-//const API_KEY = require('../../../riot_api_key.js');
-const API_KEY = process.env.RIOT_API_KEY || '';
-const CHAMPIONS = require('./champions.js');
-const request = require('request-promise');
-const _ = require('lodash');
-const Bottleneck = require('bottleneck');
 const RiotRateLimiter = require('riot-ratelimiter');
+const CHAMPIONS = require('./champions.js');
+// const API_KEY = require('../../../riot_api_key.js');
+const API_KEY = process.env.RIOT_API_KEY || '';
+
 const limiter = new RiotRateLimiter();
 
-const limiterAppRate = new Bottleneck({
-  reservoir: 100,
-  reservoirRefreshAmount: 100,
-  reservoirRefreshInterval: 120 * 1000, //app rate = 100 calls per 120 seconds, set to 99/125 secs for buffer
+function getAllMatches(beginIndex, curMatches, accountId) {
+  const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&`;
 
-  maxConcurrent: 1,
-  minTime: 50
-});
-const limiterSummonerSearch = new Bottleneck({
-  //Limited to 2000 calls per 60 seconds
-  maxConcurrent: 1,
-  minTime: 30
-});
-const limiterMatchSearch = new Bottleneck({
-  //Limited to 1000 calls per 10 seconds
-  maxConcurrent: 1,
-  minTime: 10
-});
-//Ensures request checks for both total app rate and specific method app rate
-limiterSummonerSearch.chain(limiterAppRate);
-limiterMatchSearch.chain(limiterAppRate);
+  return (async function search() {
+    try {
+      const response = await limiter.executing({
+        url: urlMatches,
+        token: API_KEY,
+        resolveWithFullResponse: true
+      });
+      const result = JSON.parse(response.body);
+      const matches = curMatches.concat(result.matches);
 
-limiterAppRate.on("failed", async (error, jobInfo) => {
-  const id = jobInfo.options.id;
+      if (result.totalGames >= beginIndex + 100) {
+        return (getAllMatches(beginIndex + 100, matches, accountId));
+      }
+      return matches;
+    } catch (error) {
+      console.log('Get All Matches error: ', error);
+      return [];
+    }
+  }());
+}
 
-  var header = error.response.headers;
-  var retryTimer = header['retry-after'];
-  var appRate = header['x-app-rate-limit'].split(/[:,]+/g);
-  console.log('Latest App Rate: ' + appRate);
+function mostPlayed(matches) {
+  const perChampion = matches.reduce((acc, match) => {
+    const champion = CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : 'Not Found';
+    if (!acc[champion]) {
+      acc[champion] = 0;
+    }
+    acc[champion] += 1;
+    return acc;
+  }, {});
 
-  //Update app rate if needed
-  limiterAppRate.updateSettings({
-    reservoir: appRate[2],
-    reservoirRefreshAmount: appRate[2],
-    reservoirRefreshInterval: appRate[3] * 1000,
-
-    maxConcurrent: 1,
-    minTime: (appRate[1]/appRate[0])*1000
+  const result = Object.keys(perChampion).map(champion => ({
+    name: champion,
+    totalGames: perChampion[champion]
+  }));
+  result.sort((a, b) => {
+    return b.totalGames - a.totalGames;
   });
 
-  console.log(`Job ${id} failed: ${error}`);
-  console.log('Retry after: ' + retryTimer);
-  return retryTimer * 1000;
-});
+  return ({
+    first: result[0],
+    second: result[1],
+    third: result[2],
+    fourth: result[3],
+    fifth: result[4],
+  });
+}
 
-var t0 = Date.now();
-setInterval(async function(){
-  const reservoir = await limiterAppRate.currentReservoir();
-  console.log(`${Math.round((Date.now() - t0) / 1000)}s`);
-}, 5000);
+// Beginning of summoner lookup
+const playerSearch = async (req) => {
+  const exitNotFound = (statusCode) => {
+    return statusCode;
+  };
 
-//Beginning of summoner lookup
-var playerSearch = async function(req){
-  var exitNotFound = function(){
-    return (['']); //Look into returning a 404 instead
+  const summonerRequest = req.body.players; // Summoner(s) to be looked up
+  if (summonerRequest[0] === '') {
+    return exitNotFound(404);
   }
+  const t0 = Date.now();
+  console.log('Start: ', summonerRequest);
 
-  var summonerRequest = req.body.players; //Summoner(s) to be looked up
-  console.log(summonerRequest);
-  if (summonerRequest[0] == ''){
-    return exitNotFound();
-  }
-  console.log('Start: ' + summonerRequest);
+  try {
+    const promises = summonerRequest.map(async (summoner) => {
+      const urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?`;
 
-  try{
-    var promises = summonerRequest.map(async function(summoner){
-      //var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?api_key=${API_KEY}`;
-      var urlSummonerName = `https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${summoner}?`;
-      var requestOptions = {
-        uri: urlSummonerName,
-        resolveWithFullResponse: true
-      };
-
-      //var response = await limiterSummonerSearch.schedule({id: summoner}, () => request(requestOptions));
-      var response = await limiter.executing({
+      const response = await limiter.executing({
         url: urlSummonerName,
         token: API_KEY,
         resolveWithFullResponse: true
       });
-      var summonerInfo = JSON.parse(response.body);
-      var matches = await getAllMatches(0, [], summonerInfo.accountId);
+      const summonerInfo = JSON.parse(response.body);
+      const matches = await getAllMatches(0, [], summonerInfo.accountId);
 
-      summonerSummary = {
+      const summonerSummary = {
         name: summonerInfo.name,
         level: summonerInfo.summonerLevel,
         accountId: summonerInfo.accountId,
@@ -101,99 +93,18 @@ var playerSearch = async function(req){
       };
       console.log('DONE', summonerSummary.name);
       return summonerSummary;
-    })
-    var summonerSummaries = await Promise.all(promises);
+    });
+    const summonerSummaries = await Promise.all(promises);
     console.log('Complete!');
+    console.log(`Elapsed search time: ${Math.round((Date.now() - t0) / 1000)}s`);
     return ({
       stats: summonerSummaries,
-     });
-
-  } catch(error){
-    console.log('Error: ', error);
-    return exitNotFound();
-  }
-}
-
-function getAllMatches(beginIndex, curMatches, accountId){
-  //var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&api_key=${API_KEY}&`;
-  var urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&`;
-  var requestOptions = {
-    uri: urlMatches,
-    resolveWithFullResponse: true
-  };
-  var jobId = beginIndex + '-' + accountId;
-
-  return async function(){
-    try {
-      var start = process.hrtime();
-      //var response = await limiterMatchSearch.schedule({id: jobId}, () => request(requestOptions));
-      var response = await limiter.executing({
-        url: urlMatches,
-        token: API_KEY,
-        resolveWithFullResponse: true
-      });
-      var result = JSON.parse(response.body);
-      var matches = curMatches.concat(result.matches);
-
-      if(result.totalGames >= beginIndex + 100){
-        return(getAllMatches(beginIndex + 100, matches, accountId));
-      }
-      else {
-        return matches;
-      }
-    } catch(error){
-      var end = process.hrtime();
-      console.log('Seconds elapsed: ' + (end[0]-start[0]));
-      return [];
-    }
-  }()
-}
-
-function addMatchIds(matches){
-  var matchIds = [];
-  matches.forEach(function(match){
-    matchIds.push(match.gameId);
-  });
-  return ({
-    totalGames: matchIds.length,
-    matchIds: matchIds,
-  });
-}
-
-function mostPlayed(matches){
-  var mostPlayed = [];
-  var totalCount = 0;
-  matches.forEach(function(match) {
-    var champ = _.remove(mostPlayed, function(x) {
-      return x.id == match.champion;
     });
-    if(champ.length == 0){
-      mostPlayed.push({
-        id: match.champion,
-        name: CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : "Not Found",
-        totalGames: 1,
-      });
-    }
-    else {
-      mostPlayed.push({
-        id: match.champion,
-        name: champ[0].name,
-        totalGames: champ[0].totalGames + 1,
-      });
-    }
-    totalCount++;
-  });
-
-  mostPlayed = _.sortBy(mostPlayed, 'totalGames');
-  mostPlayed = _.reverse(mostPlayed);
-
-  return ({
-    first: mostPlayed[0],
-    second: mostPlayed[1],
-    third: mostPlayed[2],
-    fourth: mostPlayed[3],
-    fifth: mostPlayed[4],
-  });
-}
+  } catch (error) {
+    const errorCode = error.statusCode;
+    console.log('Error: ', error.status);
+    return exitNotFound(errorCode);
+  }
+};
 
 module.exports = playerSearch;
