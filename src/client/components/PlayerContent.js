@@ -32,6 +32,7 @@ const mapStateToProps = (state) => {
 class PlayerContent extends React.Component {
   state = {
     searchID: null,
+    statusCode: null,
     stats: null,
   };
 
@@ -44,13 +45,16 @@ class PlayerContent extends React.Component {
       this.searchPlayer();
     }
     if (prevState.searchID !== this.state.searchID && this.state.searchID) {
-      this.getData();
+//      this.getData();
     }
   }
 
   async getData() {
-    try {
-      const interval = setInterval(async () => {
+    let attempts = 1;
+    const interval = setInterval(async () => {
+      console.log('Attempt number: ', attempts);
+      attempts += 1;
+      try {
         const response = await fetch(`/api/champstats/playerSearch/${this.state.searchID}`, {
           method: 'GET',
           headers: {
@@ -59,23 +63,24 @@ class PlayerContent extends React.Component {
         });
         if (!response.ok) {
           this.setState({
-            searchID: null,
-            stats: response.status,
+            statusCode: response.status,
+            stats: 'Error'
           });
-          clearInterval(interval);
-          throw Error(response.statusText);
+          throw new Error(response.statusText);
         }
         const user = await response.json();
         this.setState({
           searchID: null,
+          statusCode: null,
           stats: user.stats,
         });
         console.log('Data Retreived, end interval.');
         clearInterval(interval);
-      }, 10000);
-    } catch (error) {
-      console.log('GetData Error: ', error);
-    }
+      } catch (error) {
+        console.log('GetData Error: ', error);
+        throw error;
+      }
+    }, 10000);
   }
 
   async searchPlayer() {
@@ -95,6 +100,7 @@ class PlayerContent extends React.Component {
         stats: null
       });
       console.log('SearchID is: ', this.state.searchID);
+      this.getData();
     } catch (error) {
       console.log('Search Player Error: ', error);
       this.setState({ searchID: null });
@@ -103,23 +109,32 @@ class PlayerContent extends React.Component {
 
   render() {
     const { classes, players, selectedNav } = this.props;
-    const { searchID, stats } = this.state;
+    const { statusCode, stats } = this.state;
 
     return (
       <div className={classes.root}>
-        {searchID && <h1 className={classes.textStyle}>Loading summoner data... this may take a few minutes.</h1>}
-        {stats && <Stats stats={stats} selected={selectedNav} textStyle={classes.textStyle}/>}
+        {stats ? (
+          <Stats
+            stats={stats}
+            statusCode={statusCode}
+            selected={selectedNav}
+            textStyle={classes.textStyle}
+          />
+        ) : (
+          <h1 className={classes.textStyle}>
+          Loading summoner data... this may take a few minutes.
+          </h1>
+        )}
       </div>
     );
   }
 }
 
 function Stats(props) {
-  if (props.stats === 404) {
-    return (
-      <h1 className={props.textStyle}>Player not found. Please search again.</h1>
-    );
+  if (props.statusCode) {
+    return <ErrorCheck statusCode={props.statusCode} textStyle={props.textStyle} />
   }
+
   return (
     <div>
       <NavBar />
@@ -127,6 +142,19 @@ function Stats(props) {
       {props.selected === 1 && <PlayerChampStats stats={props.stats} />}
     </div>
   );
+}
+
+function ErrorCheck(props) {
+  switch (props.statusCode) {
+    case 404:
+      return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
+    case 408:
+      return (<h1 className={props.textStyle}>This is a long request... please keep waiting.</h1>);
+    case 503:
+      return (<h1 className={props.textStyle}>Service unavailable.</h1>);
+    default:
+      return (<h1 className={props.textStyle}>Unhandled error!</h1>);
+  }
 }
 
 export default connect(mapStateToProps)(withStyles(styles)(PlayerContent));
