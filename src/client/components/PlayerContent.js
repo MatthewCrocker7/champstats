@@ -59,14 +59,16 @@ class PlayerContent extends React.Component {
           },
         });
         if (response.ok) {
-          const user = await response.json();
-          this.setState({
-            searchID: null,
-            statusCode: null,
-            stats: user.stats,
-          });
-          console.log('SEARCH COMPLETE, ENDING INTERVAL.');
-          clearInterval(interval);
+          if (response.status !== 204) {
+            const user = await response.json();
+            this.setState({
+              searchID: null,
+              statusCode: null,
+              stats: user.stats,
+            });
+            console.log('SEARCH COMPLETE, ENDING INTERVAL.');
+            clearInterval(interval);
+          }
         } else {
           console.log('Error Code: ', response.status);
           if (response.status !== 504) {
@@ -154,7 +156,9 @@ function ErrorCheck(props) {
     case 404:
       return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
     case 408:
-      return (<h1 className={props.textStyle}>This is a long request... please keep waiting.</h1>);
+      return (
+        <h1 className={props.textStyle}>Loading summoner data... this may take a few minutes.</h1>
+      );
     case 500:
       return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
     case 503:
