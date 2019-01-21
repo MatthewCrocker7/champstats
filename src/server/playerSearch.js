@@ -58,14 +58,7 @@ function mostPlayed(matches) {
 
 // Beginning of summoner lookup
 const playerSearch = async (req) => {
-  const exitNotFound = (statusCode) => {
-    return statusCode;
-  };
-
   const summonerRequest = req.body.players; // Summoner(s) to be looked up
-  if (summonerRequest[0] === '') {
-    return exitNotFound(404);
-  }
   const t0 = Date.now();
   console.log('Start: ', summonerRequest);
 
@@ -101,9 +94,7 @@ const playerSearch = async (req) => {
       stats: summonerSummaries,
     });
   } catch (error) {
-    const errorCode = error.statusCode;
-    console.log('Error: ', error.status);
-    return exitNotFound(errorCode);
+    return Promise.reject(error);
   }
 };
 

@@ -44,9 +44,6 @@ class PlayerContent extends React.Component {
     if (prevProps.players !== this.props.players) {
       this.searchPlayer();
     }
-    if (prevState.searchID !== this.state.searchID && this.state.searchID) {
-//      this.getData();
-    }
   }
 
   async getData() {
@@ -61,24 +58,30 @@ class PlayerContent extends React.Component {
             'Content-Type': 'application/json',
           },
         });
-        if (!response.ok) {
+        if (response.ok) {
+          const user = await response.json();
           this.setState({
-            statusCode: response.status,
-            stats: 'Error'
+            searchID: null,
+            statusCode: null,
+            stats: user.stats,
           });
-          throw new Error(response.statusText);
+          console.log('SEARCH COMPLETE, ENDING INTERVAL.');
+          clearInterval(interval);
+        } else {
+          console.log('Error Code: ', response.status);
+          if (response.status !== 504) {
+            this.setState({
+              statusCode: response.status,
+              stats: 'Error'
+            });
+            console.log('SEARCH ERROR, ENDING INTERVAL.');
+            clearInterval(interval);
+          }
         }
-        const user = await response.json();
-        this.setState({
-          searchID: null,
-          statusCode: null,
-          stats: user.stats,
-        });
-        console.log('Data Retreived, end interval.');
-        clearInterval(interval);
       } catch (error) {
-        console.log('GetData Error: ', error);
-        throw error;
+        console.log('Get Data Error, ending request: ', error);
+        clearInterval(interval);
+        throw new Error(error);
       }
     }, 10000);
   }
@@ -146,10 +149,14 @@ function Stats(props) {
 
 function ErrorCheck(props) {
   switch (props.statusCode) {
+    case 400:
+      return (<h1 className={props.textStyle}>Bad request, please revise your search.</h1>);
     case 404:
       return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
     case 408:
       return (<h1 className={props.textStyle}>This is a long request... please keep waiting.</h1>);
+    case 500:
+      return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
     case 503:
       return (<h1 className={props.textStyle}>Service unavailable.</h1>);
     default:
