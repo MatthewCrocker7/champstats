@@ -35,5 +35,6 @@ app.get('/api/champstats/playerSearch/:searchID', async (req, res, next) => {
       console.log('GET DATA ERROR: ', error.statusCode);
       return next(error);
     }
+    return res.sendStatus(204);
   }, 100);
 });
