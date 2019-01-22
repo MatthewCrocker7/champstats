@@ -24,11 +24,12 @@ app.post('/api/champstats/initiatePlayerSearch', async (req, res) => {
 });
 
 app.get('/api/champstats/playerSearch/:searchID', async (req, res, next) => {
-  setTimeout(async () => {
+  return setTimeout(async () => {
     try {
       console.log('GET Search ID: ', req.params.searchID);
       const result = await allResults[req.params.searchID];
       if (result) {
+        delete allResults[req.params.searchID];
         return res.send({ stats: result.stats });
       }
     } catch (error) {
