@@ -11,11 +11,12 @@ app.use(express.json());
 const allResults = {};
 
 const requestTimeout = new Promise((resolve) => {
-  const timerID = setTimeout(async () => {
+  const timerID = setTimeout(() => {
     clearTimeout(timerID);
     resolve(null);
   }, 1000);
 });
+
 
 // Beginning of all routes
 app.get('/api/getUsername', (req, res) => {
@@ -34,13 +35,14 @@ app.get('/api/champstats/playerSearch/:searchID', async (req, res, next) => {
     console.log('GET Search ID: ', req.params.searchID);
 
     const result = await Promise.race([
-      await allResults[req.params.searchID],
+      allResults[req.params.searchID],
       requestTimeout,
     ]);
     if (result) {
       console.log('DATA RETURNED TO CLIENT');
       return res.send({ stats: result.stats });
     }
+    console.log(result);
     console.log('SENDING 204');
     return res.sendStatus(204);
   } catch (error) {
