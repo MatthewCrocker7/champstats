@@ -39,7 +39,6 @@ app.get('/api/champstats/playerSearch/:searchID', async (req, res, next) => {
     ]);
     if (result) {
       console.log('DATA RETURNED TO CLIENT');
-      delete allResults[req.params.searchID];
       return res.send({ stats: result.stats });
     }
     console.log('SENDING 204');
