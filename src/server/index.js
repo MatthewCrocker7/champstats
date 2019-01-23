@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const uuidv1 = require('uuid/v1');
-const timeout = require('connect-timeout');
 const playerSearch = require('./playerSearch.js');
 
 const app = express();
@@ -9,17 +8,16 @@ app.use(express.static('dist'));
 app.use(bodyParser.json());
 app.use(express.json());
 
-const haltOnTimedout = (req, res, next) => {
-  if (!req.timedout) {
-    next();
-  } else {
-    res.sendStatus(204);
-  }
-};
-
 const allResults = {};
 
-// Beginning of all methods
+const requestTimeout = new Promise((resolve) => {
+  const timerID = setTimeout(async () => {
+    clearTimeout(timerID);
+    resolve(null);
+  }, 1000);
+});
+
+// Beginning of all routes
 app.get('/api/getUsername', (req, res) => {
   res.send({ username: 'Summoner' });
 });
@@ -31,14 +29,21 @@ app.post('/api/champstats/initiatePlayerSearch', async (req, res) => {
   return res.send({ searchID: searchID });
 });
 
-app.get('/api/champstats/playerSearch/:searchID', timeout('1s', { respond: false }), haltOnTimedout, async (req, res, next) => {
+app.get('/api/champstats/playerSearch/:searchID', async (req, res, next) => {
   try {
     console.log('GET Search ID: ', req.params.searchID);
-    const result = await allResults[req.params.searchID];
+
+    const result = await Promise.race([
+      await allResults[req.params.searchID],
+      requestTimeout,
+    ]);
     if (result) {
-      console.log('Result returned!');
+      console.log('DATA RETURNED TO CLIENT');
+      delete allResults[req.params.searchID];
       return res.send({ stats: result.stats });
     }
+    console.log('SENDING 204');
+    return res.sendStatus(204);
   } catch (error) {
     console.log('GET DATA ERROR: ', error.statusCode);
     return next(error);
