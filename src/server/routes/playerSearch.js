@@ -1,6 +1,6 @@
 const RiotRateLimiter = require('riot-ratelimiter');
 const CHAMPIONS = require('./champions.js');
-// const API_KEY = require('../../../riot_api_key.js');
+// const API_KEY = require('../../../../riot_api_key.js');
 const API_KEY = process.env.RIOT_API_KEY || '';
 
 const limiter = new RiotRateLimiter();
@@ -23,8 +23,8 @@ function getAllMatches(beginIndex, curMatches, accountId) {
       }
       return matches;
     } catch (error) {
-      console.log('Get All Matches error: ', error);
-      return [];
+      console.log('Get All Matches error: ', error.headers);
+      return Promise.reject(error);
     }
   }());
 }
@@ -88,6 +88,7 @@ const playerSearch = async (req) => {
       return summonerSummary;
     });
     const summonerSummaries = await Promise.all(promises);
+    // console.log(summonerSummaries);
     console.log('Complete!');
     console.log(`Elapsed search time: ${Math.round((Date.now() - t0) / 1000)}s`);
     return ({

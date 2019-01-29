@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import 'typeface-roboto';
-import PlayerSearch from './components/PlayerSearch.js';
-import PlayerContent from './components/PlayerContent.js';
 import { connect } from 'react-redux';
+import 'typeface-roboto';
+import PlayerSearch from './components/PlayerSearch';
+import PlayerContent from './components/PlayerContent';
+
 
 const styles = theme => ({
   root: {
@@ -19,7 +20,7 @@ const styles = theme => ({
   },
   textStyleLoaded: {
     color: '#34568f',
-    fontFamily: "Roboto",
+    fontFamily: 'Roboto',
     backgroundColor: '#FFFFFF',
     textAlign: 'center',
   },
@@ -27,24 +28,24 @@ const styles = theme => ({
     color: '#34568f',
     marginTop: '5%',
     fontSize: 80,
-    fontFamily: "Roboto",
+    fontFamily: 'Roboto',
     backgroundColor: '#FFFFFF',
     textAlign: 'center',
   },
 });
 
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {
     players: state.players.players
   };
 };
 
 class App extends Component {
-  state = { username: null};
+  state = { username: null };
 
   componentDidMount() {
-    fetch('/api/getUsername')
+    fetch('/api/users/getUsername')
       .then(res => res.json())
       .then(user => this.setState({ username: user.username }));
   }
@@ -55,9 +56,12 @@ class App extends Component {
 
     return (
       <div className={classes.root}>
-        <Header username={username} textStyle={players ? classes.textStyleLoaded : classes.textStyleMain}/>
-        <div className={players ? classes.navBarLoad : classes.navBarHome } >
-        <PlayerSearch players={players}/>
+        <Header
+          username={username}
+          textStyle={players ? classes.textStyleLoaded : classes.textStyleMain}
+        />
+        <div className={players ? classes.navBarLoad : classes.navBarHome}>
+          <PlayerSearch players={players} />
         </div>
         {players && <PlayerContent players={players} />}
       </div>
@@ -66,16 +70,14 @@ class App extends Component {
 }
 
 export function Header(props) {
-  if(props.username){
-    return(
+  if (props.username) {
+    return (
       <h1 className={props.textStyle}>champstats.gg</h1>
     );
   }
-  else {
-    return (
-      <h1 className={props.textStyle}>Loading.. please wait!</h1>
-    );
-  }
+  return (
+    <h1 className={props.textStyle}>Loading.. please wait!</h1>
+  );
 }
 
 export default connect(mapStateToProps)(withStyles(styles)(App));
