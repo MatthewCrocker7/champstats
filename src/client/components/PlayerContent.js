@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
 import { connect } from 'react-redux';
 import NavBar from './NavBar';
@@ -40,7 +41,7 @@ class PlayerContent extends React.Component {
     this.searchPlayer();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (prevProps.players !== this.props.players) {
       this.searchPlayer();
     }
@@ -52,7 +53,7 @@ class PlayerContent extends React.Component {
       console.log('Attempt number: ', attempts);
       attempts += 1;
       try {
-        const response = await fetch(`/api/champstats/playerSearch/${this.state.searchID}`, {
+        const response = await fetch(`/api/players/playerSearch/${this.state.searchID}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -85,12 +86,12 @@ class PlayerContent extends React.Component {
         clearInterval(interval);
         throw new Error(error);
       }
-    }, 10000);
+    }, 5000);
   }
 
   async searchPlayer() {
     try {
-      const response = await fetch('/api/champstats/initiatePlayerSearch', {
+      const response = await fetch('/api/players/initiatePlayerSearch', {
         method: 'POST',
         body: JSON.stringify({
           players: this.props.players,
@@ -113,7 +114,7 @@ class PlayerContent extends React.Component {
   }
 
   render() {
-    const { classes, players, selectedNav } = this.props;
+    const { classes, selectedNav } = this.props;
     const { statusCode, stats } = this.state;
 
     return (
@@ -135,37 +136,59 @@ class PlayerContent extends React.Component {
   }
 }
 
-function Stats(props) {
-  if (props.statusCode) {
-    return <ErrorCheck statusCode={props.statusCode} textStyle={props.textStyle} />
+const Stats = (props) => {
+  const {
+    selected, stats, statusCode, textStyle
+  } = props;
+  if (statusCode) {
+    return <ErrorCheck statusCode={statusCode} textStyle={textStyle} />
   }
 
   return (
     <div>
       <NavBar />
-      {props.selected === 0 && <PlayerSummary stats={props.stats} />}
-      {props.selected === 1 && <PlayerChampStats stats={props.stats} />}
+      {selected === 0 && <PlayerSummary stats={stats} />}
+      {selected === 1 && <PlayerChampStats stats={stats} />}
     </div>
   );
-}
+};
 
-function ErrorCheck(props) {
+const ErrorCheck = (props) => {
+  const { textStyle } = props;
   switch (props.statusCode) {
     case 400:
-      return (<h1 className={props.textStyle}>Bad request, please revise your search.</h1>);
+      return (<h1 className={textStyle}>Bad request, please revise your search.</h1>);
     case 404:
-      return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
+      return (<h1 className={textStyle}>Player not found. Please search again.</h1>);
     case 408:
       return (
-        <h1 className={props.textStyle}>Loading summoner data... this may take a few minutes.</h1>
+        <h1 className={textStyle}>Loading summoner data... this may take a few minutes.</h1>
       );
     case 500:
-      return (<h1 className={props.textStyle}>Player not found. Please search again.</h1>);
+      return (<h1 className={textStyle}>Player not found. Please search again.</h1>);
     case 503:
-      return (<h1 className={props.textStyle}>Service unavailable.</h1>);
+      return (<h1 className={textStyle}>Service unavailable.</h1>);
     default:
-      return (<h1 className={props.textStyle}>Unhandled error!</h1>);
+      return (<h1 className={textStyle}>Unhandled error!</h1>);
   }
-}
+};
+
+PlayerContent.propTypes = {
+  players: PropTypes.arrayOf(PropTypes.string).isRequired,
+  selectedNav: PropTypes.number.isRequired,
+  classes: PropTypes.object.isRequired,
+};
+Stats.propTypes = {
+  selected: PropTypes.number.isRequired,
+  stats: PropTypes.oneOfType([
+    PropTypes.array,
+    PropTypes.object,
+  ]).isRequired,
+  textStyle: PropTypes.string.isRequired,
+};
+ErrorCheck.propTypes = {
+  textStyle: PropTypes.shape.isRequired,
+};
+
 
 export default connect(mapStateToProps)(withStyles(styles)(PlayerContent));
