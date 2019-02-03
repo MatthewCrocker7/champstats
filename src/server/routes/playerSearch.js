@@ -1,5 +1,6 @@
 const RiotRateLimiter = require('riot-ratelimiter');
 const db = require('../db');
+const matchSearch = require('./matchSearch.js');
 const CHAMPIONS = require('./champions.js');
 // const API_KEY = require('../../../../riot_api_key.js');
 const API_KEY = process.env.RIOT_API_KEY || '';
@@ -62,9 +63,10 @@ const saveMatchIDs = async (summonerSummaries) => {
     const queries = summonerSummaries.map(async (summoner) => {
       const id = summoner.name;
       const matches = summoner.matchHistory.matchIDs;
-      const sqlQuery = 'INSERT INTO public."playerMatches" (player, matches) VALUES($1, $2) ON CONFLICT (player) DO UPDATE SET matches = $2 RETURNING *'
-      const response = await db.query(sqlQuery, [id, matches])
-      // const response = await db.getMatchIDs('SELECT * FROM public."playerMatches" WHERE player = $1', [id]);
+      const query = 'INSERT INTO public."playerMatches" (player, matches)'
+      + ' VALUES($1, $2) ON CONFLICT (player)'
+      + ' DO UPDATE SET matches = $2 RETURNING *';
+      const response = await db.query(query, [id, matches]);
       return response.rows[0];
     });
     return Promise.all(queries);
@@ -102,15 +104,17 @@ const playerSearch = async (req) => {
         },
         mostPlayed: mostPlayed(matches)
       };
-      console.log('DONE', summonerSummary.name);
+      summonerSummary.detailedStats = await matchSearch(summonerSummary);
       return summonerSummary;
     });
     const summonerSummaries = await Promise.all(promises);
-    const answer = await saveMatchIDs(summonerSummaries);
-    console.log('Did it work? ', answer);
+    const players = await saveMatchIDs(summonerSummaries);
+    players.forEach((player) => {
+      console.log('Matches Saved: ', player.player);
+    });
     // console.log(summonerSummaries);
     console.log('Complete!');
-    console.log(`Elapsed search time: ${Math.round((Date.now() - t0) / 1000)}s`);
+    console.log(`Elapsed total time: ${Math.round((Date.now() - t0) / 1000)}s`);
     return ({
       stats: summonerSummaries,
     });
