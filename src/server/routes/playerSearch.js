@@ -65,7 +65,7 @@ const saveMatchIDs = async (summonerSummaries) => {
       const matches = summoner.matchHistory.matchIDs;
       const query = 'INSERT INTO public."playerMatches" (player, matches)'
       + ' VALUES($1, $2) ON CONFLICT (player)'
-      + ' DO UPDATE SET matches = $2 RETURNING *';
+      + ' DO UPDATE SET player = $1, matches = $2 RETURNING *';
       const response = await db.query(query, [id, matches]);
       return response.rows[0];
     });
