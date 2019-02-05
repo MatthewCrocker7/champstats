@@ -1,5 +1,5 @@
-const users = require('./users');
-const players = require('./players');
+const users = require('./users/users');
+const players = require('./players/players');
 
 module.exports = (app) => {
   app.use('/api/users', users);

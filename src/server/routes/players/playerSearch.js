@@ -1,10 +1,10 @@
 const RiotRateLimiter = require('riot-ratelimiter');
-const db = require('../db');
+const db = require('../../db');
 const matchSearch = require('./matchSearch.js');
-const CHAMPIONS = require('./champions.js');
-// const API_KEY = require('../../../../riot_api_key.js');
-const API_KEY = process.env.RIOT_API_KEY || '';
+const util = require('../references/utils');
+const CHAMPIONS = require('../references/champions.js');
 
+const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
 function getAllMatches(beginIndex, curMatches, accountId) {
@@ -100,7 +100,7 @@ const playerSearch = async (req) => {
         accountId: summonerInfo.accountId,
         matchHistory: {
           totalGames: matches.length,
-          matchIDs: matches.map(match => match.gameId)
+          matchIDs: matches.map(match => match.gameId.toString())
         },
         mostPlayed: mostPlayed(matches)
       };
@@ -114,7 +114,7 @@ const playerSearch = async (req) => {
     });
     // console.log(summonerSummaries);
     console.log('Complete!');
-    console.log(`Elapsed total time: ${Math.round((Date.now() - t0) / 1000)}s`);
+    console.log('Elapsed total time: ', util.logTime(t0), 's');
     return ({
       stats: summonerSummaries,
     });
