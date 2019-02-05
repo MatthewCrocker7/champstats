@@ -3,8 +3,8 @@ const db = require('../../db');
 const matchSearch = require('./matchSearch.js');
 const util = require('../references/utils');
 const CHAMPIONS = require('../references/champions.js');
-const API_KEY = process.env.RIOT_API_KEY || '';
 
+const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
 function getAllMatches(beginIndex, curMatches, accountId) {

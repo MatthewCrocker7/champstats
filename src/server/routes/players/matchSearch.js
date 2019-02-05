@@ -1,8 +1,8 @@
 const RiotRateLimiter = require('riot-ratelimiter');
 const db = require('../../db');
 const util = require('../references/utils');
-const API_KEY = process.env.RIOT_API_KEY || '';
 
+const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
 const getExistingData = async (matchData) => {
@@ -45,10 +45,10 @@ const matchSearch = async (summoner) => {
     const curMatchData = await getExistingData(summoner.matchHistory.matchIDs);
     console.log('Database total matches: ', curMatchData.length);
     console.log('Riot total matches: ', summoner.matchHistory.matchIDs.length);
+
     const searchMatches = summoner.matchHistory.matchIDs.filter((match) => {
       return !curMatchData.includes(match);
     });
-
     console.log('New Matches: ', searchMatches.length);
     if (searchMatches.length === 0) {
       console.log('Match Data Retreived: ', summoner.name, ' - ', util.logTime(t0), 's');
