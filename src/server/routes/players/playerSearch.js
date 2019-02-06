@@ -7,8 +7,46 @@ const CHAMPIONS = require('../references/champions.js');
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
-function getAllMatches(beginIndex, curMatches, accountId) {
-  const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountId}?queue=420&beginIndex=${beginIndex}&`;
+// Grab existing match IDs from db
+// Query riot once with begin index 0 for 100 most recent Matches
+// If all 100 matches don't match db data, query next 100 (repeat)
+const getDBMatchIDs = async (summoner) => {
+  try {
+    const query = 'SELECT * FROM public."playerMatches" WHERE player = $1';
+    const response = await db.getMatchIDs(query, [summoner]);
+
+    return response.rows[0] ? response.rows[0].matches : [];
+  } catch (error) {
+    console.log('Get Database MatchIDs error: ', error);
+    return Promise.reject(error);
+  }
+};
+
+const testGetAllMatchIDs = async (beginIndex, curMatches, accountID, dbMatches) => {
+  const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountID}?queue=420&beginIndex=${beginIndex}&`;
+
+  try {
+    const response = await limiter.executing({
+      url: urlMatches,
+      token: API_KEY,
+      resolveWithFullResponse: true
+    });
+    const result = JSON.parse(response.body);
+    const riotMatches = result.matches.map((match) => {
+      return match.gameId.toString();
+    });
+    const newMatches = riotMatches.filter((match) => {
+      return !dbMatches.includes(match);
+    });
+    return newMatches; // wrong
+  } catch (error) {
+    console.log('Get all matches error: ', error);
+    return Promise.reject(error);
+  }
+};
+
+const getAllMatchIDs = (beginIndex, curMatches, accountID) => {
+  const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountID}?queue=420&beginIndex=${beginIndex}&`;
 
   return (async function search() {
     try {
@@ -21,7 +59,7 @@ function getAllMatches(beginIndex, curMatches, accountId) {
       const matches = curMatches.concat(result.matches);
 
       if (result.totalGames >= beginIndex + 100) {
-        return (getAllMatches(beginIndex + 100, matches, accountId));
+        return (getAllMatchIDs(beginIndex + 100, matches, accountID));
       }
       return matches;
     } catch (error) {
@@ -29,9 +67,9 @@ function getAllMatches(beginIndex, curMatches, accountId) {
       return Promise.reject(error);
     }
   }());
-}
+};
 
-function mostPlayed(matches) {
+const mostPlayed = (matches) => {
   const perChampion = matches.reduce((acc, match) => {
     const champion = CHAMPIONS[match.champion] ? CHAMPIONS[match.champion].name : 'Not Found';
     if (!acc[champion]) {
@@ -56,7 +94,7 @@ function mostPlayed(matches) {
     fourth: result[3],
     fifth: result[4],
   });
-}
+};
 
 const saveMatchIDs = async (summonerSummaries) => {
   try {
@@ -92,7 +130,9 @@ const playerSearch = async (req) => {
         resolveWithFullResponse: true
       });
       const summonerInfo = JSON.parse(response.body);
-      const matches = await getAllMatches(0, [], summonerInfo.accountId);
+      const dbMatches = await getDBMatchIDs(summonerInfo.name);
+      console.log(dbMatches.length);
+      const matches = await getAllMatchIDs(0, [], summonerInfo.accountId);
 
       const summonerSummary = {
         name: summonerInfo.name,
