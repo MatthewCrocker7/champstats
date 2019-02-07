@@ -21,8 +21,6 @@ router.post('/initiatePlayerSearch', async (req, res) => {
 
 router.get('/playerSearch/:searchID', async (req, res, next) => {
   try {
-    console.log('GET Search ID: ', req.params.searchID);
-
     const result = await Promise.race([
       allResults[req.params.searchID],
       requestTimeout,
