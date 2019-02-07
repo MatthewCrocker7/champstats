@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 
@@ -8,7 +8,7 @@ const styles = theme => ({
   },
   textStyle: {
     color: '#34568f',
-    fontFamily: "Roboto",
+    fontFamily: 'Roboto',
     textAlign: 'center',
   },
   contentLayout: {
@@ -21,7 +21,7 @@ const styles = theme => ({
 });
 
 class PlayerSummary extends React.Component {
-  render(){
+  render() {
     const { classes, stats } = this.props;
 
     return(
@@ -39,7 +39,7 @@ class PlayerSummary extends React.Component {
           </Grid>
           <Grid item xs={6}>
             <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.name}>Favorite: {x.mostPlayed.first.name} - {x.mostPlayed.first.totalGames}</h1>)}
+              {stats.map(x => <h1 className={classes.textStyle} key={x.name}>Total Games: {x.matchHistory.totalGames}</h1>)}
             </div>
           </Grid>
           <Grid item xs={6}>

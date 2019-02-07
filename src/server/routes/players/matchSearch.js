@@ -22,6 +22,21 @@ const getExistingData = async (matchData) => {
   }
 };
 
+/* const testGetExistingData = async (matchData) => {
+  try {
+    const query = 'SELECT match FROM public."matchInfo" WHERE match in $1';
+    const response = await db.query(query, [matchData]);
+    console.log(response.rows);
+    //return response.rows[0] ? response.rows[0].match : response.rows[0];
+
+
+    return response;
+  } catch (error) {
+    console.log('Check match data error: ', error);
+    return Promise.reject(error);
+  }
+}; */
+
 const saveMatchData = async (matchData) => {
   try {
     const queries = matchData.map(async (match) => {
@@ -42,14 +57,18 @@ const saveMatchData = async (matchData) => {
 const matchSearch = async (summoner) => {
   const t0 = Date.now();
   try {
+    // await testGetExistingData();
+    console.log(summoner.name, ' - ', util.logTime(t0), 's');
     const curMatchData = await getExistingData(summoner.matchHistory.matchIDs);
-    console.log('Database total matches: ', curMatchData.length);
-    console.log('Riot total matches: ', summoner.matchHistory.matchIDs.length);
+    console.log('Current Database match info: ', summoner.name, ' - ', curMatchData.length);
+    console.log(summoner.name, ' - ', util.logTime(t0), 's');
 
     const searchMatches = summoner.matchHistory.matchIDs.filter((match) => {
       return !curMatchData.includes(match);
     });
-    console.log('New Matches: ', searchMatches.length);
+    console.log('New matches to search/save: ', summoner.name, ' - ', searchMatches.length);
+
+    // Returns if database already holds all matches
     if (searchMatches.length === 0) {
       console.log('Match Data Retreived: ', summoner.name, ' - ', util.logTime(t0), 's');
       return Promise.resolve({});
