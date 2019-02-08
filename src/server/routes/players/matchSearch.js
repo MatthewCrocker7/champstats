@@ -1,6 +1,7 @@
 const RiotRateLimiter = require('riot-ratelimiter');
 const db = require('../../db');
 const util = require('../references/utils');
+const m = require('./matchParse');
 
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
@@ -22,20 +23,17 @@ const getExistingData = async (matchData) => {
   }
 };
 
-/* const testGetExistingData = async (matchData) => {
-  try {
-    const query = 'SELECT match FROM public."matchInfo" WHERE match in $1';
-    const response = await db.query(query, [matchData]);
-    console.log(response.rows);
-    //return response.rows[0] ? response.rows[0].match : response.rows[0];
-
-
-    return response;
-  } catch (error) {
-    console.log('Check match data error: ', error);
-    return Promise.reject(error);
-  }
-}; */
+const parseData = (match) => {
+  const params = [
+    match.gameId, // Unique identifier for each match
+    match.seasonId, // Seasons do match integer direction. e.g. season8 = id11
+    match.platformId, // Region (NA, EU, KR, etc.)
+    match.gameVersion, // Patch the game was played on
+    m.filterTeam(match.teams, 100), // Blue team
+    m.filterTeam(match.teams, 200), // Red team
+  ];
+  return params;
+};
 
 const saveMatchData = async (matchData) => {
   try {
@@ -43,7 +41,9 @@ const saveMatchData = async (matchData) => {
       const query = 'INSERT INTO public."matchInfo" (match, season)'
       + ' VALUES($1, $2) ON CONFLICT (match)'
       + ' DO UPDATE SET match = $1, season = $2';
-      const response = await db.query(query, [match.gameId, match.seasonId]);
+      // const params = parseData(match);
+      const params = [match.gameId, match.seasonId];
+      const response = await db.query(query, params);
       // console.log(response);
       return response.rows;
     });
@@ -57,8 +57,6 @@ const saveMatchData = async (matchData) => {
 const matchSearch = async (summoner) => {
   const t0 = Date.now();
   try {
-    // await testGetExistingData();
-    console.log(summoner.name, ' - ', util.logTime(t0), 's');
     const curMatchData = await getExistingData(summoner.matchHistory.matchIDs);
     console.log('Current Database match info: ', summoner.name, ' - ', curMatchData.length);
     console.log(summoner.name, ' - ', util.logTime(t0), 's');
@@ -70,7 +68,6 @@ const matchSearch = async (summoner) => {
 
     // Returns if database already holds all matches
     if (searchMatches.length === 0) {
-      console.log('Match Data Retreived: ', summoner.name, ' - ', util.logTime(t0), 's');
       return Promise.resolve({});
     }
     const promises = searchMatches.map(async (match) => {
@@ -81,13 +78,13 @@ const matchSearch = async (summoner) => {
         resolveWithFullResponse: true
       });
       const matchInfo = JSON.parse(response.body);
-
+      console.log(matchInfo);
       return matchInfo;
     });
     const detailedMatchData = await Promise.all(promises);
     await saveMatchData(detailedMatchData);
 
-    console.log('Match Search/Save Time: ', summoner.name, ' - ', util.logTime(t0), 's');
+    console.log('New match data saved: ', summoner.name, ' - ', util.logTime(t0), 's');
 
     return detailedMatchData;
   } catch (error) {
