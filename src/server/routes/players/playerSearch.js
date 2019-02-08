@@ -2,7 +2,7 @@ const RiotRateLimiter = require('riot-ratelimiter');
 const db = require('../../db');
 const matchSearch = require('./matchSearch.js');
 const util = require('../references/utils');
-const CHAMPIONS = require('../references/champions.js');
+// const CHAMPIONS = require('../references/champions.js');
 
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
@@ -24,8 +24,7 @@ const getDBMatchIDs = async (summoner) => {
 
 const getAllMatchIDs = async (index, accountID, dbMatches) => {
   const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountID}?queue=420&beginIndex=${index}&`;
-  // return (async function search() {
-  // }());
+
   try {
     const response = await limiter.executing({
       url: urlMatches,
