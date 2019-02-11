@@ -33,8 +33,8 @@ const parseData = (match) => {
     m.filterTeam(match.teams, 100), // Blue team
     m.filterTeam(match.teams, 200), // Red team
   ];
-  console.log('Match parameters to save in DB: ', params);
-  const testResult = m.filterPlayer(match.participantIdentities, match.partcipants, 1);
+  // console.log('Match parameters to save in DB: ', params);
+  const testResult = m.filterPlayer(match.participantIdentities, match.participants, 1);
   console.log('Test match parse: ', testResult);
   return params;
 };
