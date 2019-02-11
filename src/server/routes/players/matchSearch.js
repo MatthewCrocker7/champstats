@@ -29,20 +29,27 @@ const parseData = (match) => {
     match.seasonId, // Seasons do match integer direction. e.g. season8 = id11
     match.platformId, // Region (NA, EU, KR, etc.)
     match.gameVersion, // Patch the game was played on
+    match.gameDuration, // Match length in seconds
     m.filterTeam(match.teams, 100), // Blue team
     m.filterTeam(match.teams, 200), // Red team
+    m.filterPlayerTeams(match.participants, 100), // Get all players on blue team
+    m.filterPlayerTeams(match.participants, 200), // Get all players on red team
   ];
+  console.log('Match parameters to save in DB: ', params);
   return params;
 };
 
 const saveMatchData = async (matchData) => {
   try {
     const queries = matchData.map(async (match) => {
-      const query = 'INSERT INTO public."matchInfo" (match, season)'
-      + ' VALUES($1, $2) ON CONFLICT (match)'
-      + ' DO UPDATE SET match = $1, season = $2';
+      const query = 'INSERT INTO public."matchInfo"'
+      + ' (match, season, region, patch, duration, blue, red)'
+      + ' VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (match)'
+      + ' DO UPDATE SET'
+      + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7';
       // const params = parseData(match);
-      const params = [match.gameId, match.seasonId];
+      const params = parseData(match);
+      // const params = [match.gameId, match.seasonId];
       const response = await db.query(query, params);
       // console.log(response);
       return response.rows;
