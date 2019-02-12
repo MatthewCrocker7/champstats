@@ -32,10 +32,11 @@ const parseData = (match) => {
     match.gameDuration, // Match length in seconds
     m.filterTeam(match.teams, 100), // Blue team
     m.filterTeam(match.teams, 200), // Red team
+    m.filterPlayers(match.participantIdentities, match.participants), // All player stats
   ];
-  // console.log('Match parameters to save in DB: ', params);
-  const testResult = m.filterPlayer(match.participantIdentities, match.participants, 1);
-  console.log('Test match parse: ', testResult);
+  console.log('Match parameters to save in DB: ', params);
+
+  // console.log('Test match parse: ', testResult);
   return params;
 };
 
@@ -43,10 +44,11 @@ const saveMatchData = async (matchData) => {
   try {
     const queries = matchData.map(async (match) => {
       const query = 'INSERT INTO public."matchInfo"'
-      + ' (match, season, region, patch, duration, blue, red)'
-      + ' VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (match)'
+      + ' (match, season, region, patch, duration, blue, red, players)'
+      + ' VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (match)'
       + ' DO UPDATE SET'
-      + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7';
+      + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7,'
+      + ' players = $8';
       // const params = parseData(match);
       const params = parseData(match);
       // const params = [match.gameId, match.seasonId];
@@ -85,7 +87,7 @@ const matchSearch = async (summoner) => {
         resolveWithFullResponse: true
       });
       const matchInfo = JSON.parse(response.body);
-      console.log(matchInfo);
+      // console.log(matchInfo);
       return matchInfo;
     });
     const detailedMatchData = await Promise.all(promises);

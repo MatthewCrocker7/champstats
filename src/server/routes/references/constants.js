@@ -1,4 +1,4 @@
-const CHAMPIONS = {
+const champions = {
   1: {
     id: 1,
     name: 'Annie'
@@ -564,5 +564,21 @@ const CHAMPIONS = {
     name: 'Pyke'
   },
 };
+const summonerSpells = {
+  4: {
+    name: 'Flash'
+  }
+};
 
-module.exports = CHAMPIONS;
+const getChampion = (id) => {
+  return champions[id] ? champions[id].name : 'Not Found';
+};
+
+const getSummonerSpell = (id) => {
+  return summonerSpells[id];
+};
+
+module.exports = {
+  getChampion,
+  getSummonerSpell,
+};
