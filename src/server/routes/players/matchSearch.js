@@ -22,7 +22,8 @@ const getExistingData = async (matchData) => {
   }
 };
 
-const parseData = (match) => {
+const parseRawMatchDataPG = (match) => {
+  // This function parses match data into an array to save to SQL
   const params = [
     match.gameId, // Unique identifier for each match
     match.seasonId, // Seasons do match integer direction. e.g. season8 = id11
@@ -33,26 +34,36 @@ const parseData = (match) => {
     m.filterTeam(match.teams, 200), // Red team
     m.filterPlayers(match.participantIdentities, match.participants), // All player stats
   ];
-  // console.log('Match parameters to save in DB: ', params);
 
-  // console.log('Test match parse: ', testResult);
   return params;
 };
 
-const saveMatchData = async (matchData) => {
+const parseRawMatchData = (rawMatches) => {
+  const result = rawMatches.map((match) => {
+    return {
+      match: match.gameId.toString(),
+      season: match.seasonId,
+      region: match.platformId,
+      patch: match.gameVersion, // Patch the game was played on
+      duration: match.gameDuration, // Match length in seconds
+      blue: m.filterTeam(match.teams, 100), // Blue team
+      red: m.filterTeam(match.teams, 200), // Red team
+      players: m.filterPlayers(match.participantIdentities, match.participants), // All player stats
+    };
+  });
+  return result;
+};
+
+const saveMatchData = async (pgParams) => {
   try {
-    const queries = matchData.map(async (match) => {
+    const queries = pgParams.map(async (params) => {
       const query = 'INSERT INTO public."matchInfo"'
       + ' (match, season, region, patch, duration, blue, red, players)'
       + ' VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (match)'
       + ' DO UPDATE SET'
       + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7,'
       + ' players = $8';
-      // const params = parseData(match);
-      const params = parseData(match);
-      // const params = [match.gameId, match.seasonId];
       const response = await db.query(query, params);
-      // console.log(response);
       return response.rows;
     });
     return Promise.all(queries);
@@ -67,13 +78,12 @@ const matchSearch = async (summoner) => {
   try {
     const curMatchData = await getExistingData(summoner.matchHistory.matchIDs);
     console.log('Current Database match info: ', summoner.name, ' - ', curMatchData.length);
-    console.log(summoner.name, ' - ', util.logTime(t0), 's');
+    console.log('Query existing DB time: ', summoner.name, ' - ', util.logTime(t0), 's');
 
     // Returns an array of matchIDs with existing statistics to compare with potential new IDs
     const curMatchIDs = curMatchData.map((data) => {
       return data.match;
     });
-    console.log('Map time: ', summoner.name, ' - ', util.logTime(t0), 's');
     const searchMatches = summoner.matchHistory.matchIDs.filter((match) => {
       return !curMatchIDs.includes(match);
     });
@@ -94,12 +104,20 @@ const matchSearch = async (summoner) => {
       // console.log(matchInfo);
       return matchInfo;
     });
-    const detailedMatchData = await Promise.all(promises);
-    await saveMatchData(detailedMatchData);
 
-    console.log('New match data saved: ', summoner.name, ' - ', util.logTime(t0), 's');
+    const rawMatchData = await Promise.all(promises);
+    const pgParams = rawMatchData.map((match) => {
+      return parseRawMatchDataPG(match);
+    });
+    saveMatchData(pgParams); // Parses and saves new match data to SQL
 
-    return detailedMatchData;
+    const parsedMatchData = parseRawMatchData(rawMatchData);
+
+    const allMatchData = curMatchData.concat(parsedMatchData);
+
+    console.log('MATCH STATS COMPLETE: ', summoner.name, ' - ', util.logTime(t0), 's');
+
+    return allMatchData;
   } catch (error) {
     return Promise.reject(error);
   }
