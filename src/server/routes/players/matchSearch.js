@@ -9,10 +9,9 @@ const limiter = new RiotRateLimiter();
 const getExistingData = async (matchData) => {
   try {
     const queries = matchData.map(async (match) => {
-      const query = 'SELECT match FROM public."matchInfo" WHERE match = $1';
+      const query = 'SELECT * FROM public."matchInfo" WHERE match = $1';
       const response = await db.query(query, [match]);
-
-      return response.rows[0] ? response.rows[0].match : response.rows[0];
+      return response.rows[0];
     });
     let results = await Promise.all(queries);
     results = results.filter(Boolean);
@@ -34,7 +33,7 @@ const parseData = (match) => {
     m.filterTeam(match.teams, 200), // Red team
     m.filterPlayers(match.participantIdentities, match.participants), // All player stats
   ];
-  console.log('Match parameters to save in DB: ', params);
+  // console.log('Match parameters to save in DB: ', params);
 
   // console.log('Test match parse: ', testResult);
   return params;
@@ -70,8 +69,13 @@ const matchSearch = async (summoner) => {
     console.log('Current Database match info: ', summoner.name, ' - ', curMatchData.length);
     console.log(summoner.name, ' - ', util.logTime(t0), 's');
 
+    // Returns an array of matchIDs with existing statistics to compare with potential new IDs
+    const curMatchIDs = curMatchData.map((data) => {
+      return data.match;
+    });
+    console.log('Map time: ', summoner.name, ' - ', util.logTime(t0), 's');
     const searchMatches = summoner.matchHistory.matchIDs.filter((match) => {
-      return !curMatchData.includes(match);
+      return !curMatchIDs.includes(match);
     });
     console.log('New matches to search/save: ', summoner.name, ' - ', searchMatches.length);
 
