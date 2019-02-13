@@ -101,7 +101,7 @@ const playerSearch = async (req) => {
           matchIDs: matches
         },
       };
-      summonerSummary.detailedStats = await matchSearch(summonerSummary);
+      summonerSummary.stats = await matchSearch(summonerSummary);
       return summonerSummary;
     });
     const summonerSummaries = await Promise.all(promises);
