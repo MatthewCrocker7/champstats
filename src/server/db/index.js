@@ -5,6 +5,25 @@ const pool = new Pool({
   ssl: true,
 });
 
+/*
+async function query(text) {
+  const client = await pool.connect()
+  try {
+    return await client.query(text)
+  } finally {
+    client.release()
+
+  }
+}
+
+const updateAccounts = async (fromId, toId, amount) => {
+  const client = await pool.connect();
+  await client.query('BEGIN');
+  await client.query('UPDATE accounts SET amount = -100 where id = ${fromId}')
+  await client.query('UPDATE accounts SET amount = 100 where id = ${toId}')
+  await client.query('COMMIT')
+} */
+
 module.exports = {
   getMatchIDs: (text, params, callback) => {
     return pool.query(text, params, callback);
@@ -13,8 +32,3 @@ module.exports = {
     return pool.query(text, params, callback);
   }
 };
-
-// Update match IDs of a player
-// const sqlQuery = 'INSERT INTO public."playerMatches" (player, matches) VALUES($1, $2) ON CONFLICT (player) DO UPDATE SET matches = $2 RETURNING *'
-// Get player current matcheIDs
-// const response = await db.getMatchIDs('SELECT * FROM public."playerMatches" WHERE player = $1', [id]);

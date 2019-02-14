@@ -555,6 +555,10 @@ const champions = {
     id: 516,
     name: 'Ornn'
   },
+  517: {
+    id: 517,
+    name: 'Sylas'
+  },
   518: {
     id: 518,
     name: 'Neeko'
@@ -569,6 +573,27 @@ const summonerSpells = {
     name: 'Flash'
   }
 };
+const seasons = {
+  7: {
+    name: 'Season 6',
+    season: 6
+  },
+  9: {
+    name: 'Season 7',
+    season: 7
+  },
+  11: {
+    name: 'Season 8',
+    season: 8
+  },
+  12: {
+    name: 'Pre-Season 9',
+  },
+  13: {
+    name: 'Season 9',
+    season: 9
+  }
+};
 
 const getChampion = (id) => {
   return champions[id] ? champions[id].name : 'Not Found';
@@ -578,7 +603,12 @@ const getSummonerSpell = (id) => {
   return summonerSpells[id];
 };
 
+const getSeason = (id) => {
+  return seasons[id];
+};
+
 module.exports = {
   getChampion,
   getSummonerSpell,
+  getSeason,
 };
