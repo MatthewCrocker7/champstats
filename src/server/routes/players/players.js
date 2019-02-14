@@ -16,6 +16,8 @@ router.post('/initiatePlayerSearch', async (req, res) => {
   const searchID = uuidv1();
   allResults[searchID] = playerSearch(req);
   console.log('POST Search ID: ', searchID);
+
+  // Later return existing player statistics
   return res.send({ searchID });
 });
 

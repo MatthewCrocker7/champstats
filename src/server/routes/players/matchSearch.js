@@ -2,6 +2,7 @@ const RiotRateLimiter = require('riot-ratelimiter');
 const db = require('../../db');
 const util = require('../references/utils');
 const m = require('./matchParse');
+const statsUtil = require('./createPlayerStats');
 
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
@@ -18,7 +19,7 @@ const getExistingData = async (matchData) => {
     return results;
   } catch (error) {
     console.log('Check match data error: ', error);
-    return Promise.reject(error);
+    throw error;
   }
 };
 
@@ -69,9 +70,41 @@ const saveMatchData = async (pgParams) => {
     return Promise.all(queries);
   } catch (error) {
     console.log('Save match data error: ', error);
-    return Promise.reject(error);
+    throw error;
   }
 };
+
+
+/*
+-- summoner table
+| summoner_id | player_name |
+
+-- summoner_to_match <-----
+| summoner_id | match_id | win true/false  | team (red/blue) | stats (json) |    |
+| summoner_1 | 1 |
+| summoner_2 | 1 |
+| summoner_2 | 1 |
+
+-- matches
+| match_id | red-team-win: true |  blue-team-win: false |
+*/
+
+// fetch summoner - insert into summoner table
+// fetch matches for summoner from riot
+//   for each:
+//      insert into matches the match info
+//      insert into summoner_to_match the linkage
+
+//  SELECT * FROM matches
+//    JOIN summer_to_match ON summoner_to_match.match_id = match.match_id
+//    JOIN summoner ON summoner.id = summoner_to_match.summoner_id
+//  WHERE summoner.summoner_id = $1
+//
+//  SELECT COUNT(*) FROM matches
+//    JOIN summer_to_match ON summoner_to_match.match_id = match.match_id
+//    JOIN summoner ON summoner.id = summoner_to_match.summoner_id
+//  WHERE summon.summmoner_id = $1 AND match_outcome = loss
+//
 
 const matchSearch = async (summoner) => {
   const t0 = Date.now();
@@ -91,6 +124,8 @@ const matchSearch = async (summoner) => {
 
     // Returns if database already holds all matches
     if (searchMatches.length === 0) {
+      // console.log(curMatchData);
+      const temp = statsUtil.createStats(summoner, curMatchData);
       return Promise.resolve({});
     }
     const promises = searchMatches.map(async (match) => {
@@ -114,12 +149,15 @@ const matchSearch = async (summoner) => {
     const parsedMatchData = parseRawMatchData(rawMatchData);
 
     const allMatchData = curMatchData.concat(parsedMatchData);
+    // console.log(allMatchData);
 
+    const stats = statsUtil.createStats(summoner, allMatchData);
     console.log('MATCH STATS COMPLETE: ', summoner.name, ' - ', util.logTime(t0), 's');
 
     return allMatchData;
   } catch (error) {
-    return Promise.reject(error);
+    console.log('Match search error: ', error);
+    throw error;
   }
 };
 
