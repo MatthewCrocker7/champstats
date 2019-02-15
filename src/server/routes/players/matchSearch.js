@@ -7,22 +7,6 @@ const statsUtil = require('./createPlayerStats');
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
-const getExistingData = async (matchData) => {
-  try {
-    const queries = matchData.map(async (match) => {
-      const query = 'SELECT * FROM public."matchInfo" WHERE match = $1';
-      const response = await db.query(query, [match]);
-      return response.rows[0];
-    });
-    let results = await Promise.all(queries);
-    results = results.filter(Boolean);
-    return results;
-  } catch (error) {
-    console.log('Check match data error: ', error);
-    throw error;
-  }
-};
-
 const parseRawMatchDataPG = (match) => {
   // This function parses match data into an array to save to SQL
   const params = [
@@ -38,42 +22,6 @@ const parseRawMatchDataPG = (match) => {
 
   return params;
 };
-
-const parseRawMatchData = (rawMatches) => {
-  const result = rawMatches.map((match) => {
-    return {
-      match: match.gameId.toString(),
-      season: match.seasonId,
-      region: match.platformId,
-      patch: match.gameVersion, // Patch the game was played on
-      duration: match.gameDuration, // Match length in seconds
-      blue: m.filterTeam(match.teams, 100), // Blue team
-      red: m.filterTeam(match.teams, 200), // Red team
-      players: m.filterPlayers(match.participantIdentities, match.participants), // All player stats
-    };
-  });
-  return result;
-};
-
-const saveMatchData = async (pgParams) => {
-  try {
-    const queries = pgParams.map(async (params) => {
-      const query = 'INSERT INTO public."matchInfo"'
-      + ' (match, season, region, patch, duration, blue, red, players)'
-      + ' VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (match)'
-      + ' DO UPDATE SET'
-      + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7,'
-      + ' players = $8';
-      const response = await db.query(query, params);
-      return response.rows;
-    });
-    return Promise.all(queries);
-  } catch (error) {
-    console.log('Save match data error: ', error);
-    throw error;
-  }
-};
-
 
 /*
 -- summoner table
@@ -96,7 +44,7 @@ const saveMatchData = async (pgParams) => {
 //      insert into summoner_to_match the linkage
 
 //  SELECT * FROM matches
-//    JOIN summer_to_match ON summoner_to_match.match_id = match.match_id
+//    JOIN summoner_to_match ON summoner_to_match.match_id = match.match_id
 //    JOIN summoner ON summoner.id = summoner_to_match.summoner_id
 //  WHERE summoner.summoner_id = $1
 //
@@ -162,3 +110,43 @@ const matchSearch = async (summoner) => {
 };
 
 module.exports = matchSearch;
+
+/*
+
+
+const parseRawMatchData = (rawMatches) => {
+  const result = rawMatches.map((match) => {
+    return {
+      match: match.gameId.toString(),
+      season: match.seasonId,
+      region: match.platformId,
+      patch: match.gameVersion, // Patch the game was played on
+      duration: match.gameDuration, // Match length in seconds
+      blue: m.filterTeam(match.teams, 100), // Blue team
+      red: m.filterTeam(match.teams, 200), // Red team
+      players: m.filterPlayers(match.participantIdentities, match.participants), // All player stats
+    };
+  });
+  return result;
+};
+
+const saveMatchData = async (pgParams) => {
+  try {
+    const queries = pgParams.map(async (params) => {
+      const query = 'INSERT INTO public."matchInfo"'
+      + ' (match, season, region, patch, duration, blue, red, players)'
+      + ' VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (match)'
+      + ' DO UPDATE SET'
+      + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7,'
+      + ' players = $8';
+      const response = await db.query(query, params);
+      return response.rows;
+    });
+    return Promise.all(queries);
+  } catch (error) {
+    console.log('Save match data error: ', error);
+    throw error;
+  }
+};
+
+*/
