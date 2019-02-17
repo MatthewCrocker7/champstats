@@ -14,6 +14,13 @@ const getIdentity = (playerIdentities, playerId) => {
   return playerIdentity.player.summonerName;
 };
 
+const getParticipantId = (playerIdentities, summoner) => {
+  const playerIdentity = playerIdentities.filter((player) => {
+    return player.player.accountId === summoner.accountId;
+  })[0];
+  return playerIdentity.participantId;
+};
+
 const getTeammates = (playerIdentities, allPlayerStats, playerId, teamId) => {
   const teammates = allPlayerStats.filter((player) => {
     return (player.teamId === teamId && player.participantId !== playerId);
@@ -40,6 +47,14 @@ const getEnemies = (playerIdentities, allPlayerStats, playerId, teamId) => {
     };
   });
   return result;
+};
+
+const getPlayerStats = (participants, id) => {
+  const stats = participants.filter((player) => {
+    return player.participantId === id;
+  })[0];
+  // console.log(stats);
+  return stats;
 };
 
 const filterPlayers = (playerIdentities, allPlayerStats) => {
@@ -98,5 +113,7 @@ module.exports = {
   filterTeam,
   getTeammates,
   getEnemies,
-  filterPlayers
+  filterPlayers,
+  getParticipantId,
+  getPlayerStats
 };

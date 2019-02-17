@@ -53,12 +53,15 @@ const getAllMatchIDs = async (index, accountID, dbMatches) => {
 };
 
 const saveSummonerMatchData = async (summoner, matches) => {
+  const matchData = await matchSearch(summoner, matches);
   try {
-    const queries = matches.map(async (match) => {
-      const query = 'INSERT INTO public.summoner_to_match (account, match_id)'
-        + ' VALUES($1, $2) ON CONFLICT (account, match_id)'
-        + ' DO UPDATE SET account = $1, match_id = $2';
-      const response = await db.query(query, [summoner.accountId, match]);
+    const queries = matchData.map(async (match) => {
+      const query = 'INSERT INTO public.summoner_to_match'
+        + ' (account, match_id, player_id, kills, deaths, assists)'
+        + ' VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (account, match_id)'
+        + ' DO UPDATE SET account = $1, match_id = $2, player_id = $3, kills = $4,'
+        + ' deaths = $5, assists = $6';
+      const response = await db.query(query, match);
       return response.rows[0];
     });
     return Promise.all(queries);
@@ -75,7 +78,6 @@ const saveSummoner = async (summoner) => {
       + ' DO UPDATE SET puuid = $1, account = $2, name = $3';
     const saveParams = [summoner.puuid, summoner.accountId, summoner.name];
     const response = await db.query(saveQuery, saveParams);
-    console.log(response);
 
     return response;
   } catch (error) {
@@ -94,7 +96,6 @@ const getSummoner = async (summoner) => {
     const getParam = [summoner.puuid];
     const response = await db.query(getQuery, getParam);
     // console.log(response.rows);
-
     if (response.rowCount === 0 || response.rows[0].name !== summoner.name) {
       await saveSummoner(summoner);
     }
