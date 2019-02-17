@@ -7,7 +7,7 @@ const statsUtil = require('./createPlayerStats');
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
-const parseRawMatchDataPG = (match) => {
+const parseRawMatchData = (summoner, match) => {
   // This function parses match data into an array to save to SQL
   const params = [
     match.gameId, // Unique identifier for each match
@@ -19,6 +19,25 @@ const parseRawMatchDataPG = (match) => {
     m.filterTeam(match.teams, 200), // Red team
     m.filterPlayers(match.participantIdentities, match.participants), // All player stats
   ];
+
+  console.log(params);
+
+  return params;
+};
+
+const parsePlayerMatchData = (summoner, match) => {
+  const participantId = m.getParticipantId(match.participantIdentities, summoner);
+  const playerStats = m.getPlayerStats(match.participants, participantId);
+  const params = [
+    summoner.accountId,
+    match.gameId,
+    participantId,
+    playerStats.stats.kills,
+    playerStats.stats.deaths,
+    playerStats.stats.assists,
+  ];
+
+  console.log(params);
 
   return params;
 };
@@ -54,29 +73,10 @@ const parseRawMatchDataPG = (match) => {
 //  WHERE summon.summmoner_id = $1 AND match_outcome = loss
 //
 
-const matchSearch = async (summoner) => {
+const matchSearch = async (summoner, matches) => {
   const t0 = Date.now();
   try {
-    const curMatchData = await getExistingData(summoner.matchHistory.matchIDs);
-    console.log('Current Database match info: ', summoner.name, ' - ', curMatchData.length);
-    console.log('Query existing DB time: ', summoner.name, ' - ', util.logTime(t0), 's');
-
-    // Returns an array of matchIDs with existing statistics to compare with potential new IDs
-    const curMatchIDs = curMatchData.map((data) => {
-      return data.match;
-    });
-    const searchMatches = summoner.matchHistory.matchIDs.filter((match) => {
-      return !curMatchIDs.includes(match);
-    });
-    console.log('New matches to search/save: ', summoner.name, ' - ', searchMatches.length);
-
-    // Returns if database already holds all matches
-    if (searchMatches.length === 0) {
-      // console.log(curMatchData);
-      const temp = statsUtil.createStats(summoner, curMatchData);
-      return Promise.resolve({});
-    }
-    const promises = searchMatches.map(async (match) => {
+    const promises = matches.map(async (match) => {
       const urlMatch = `https://na1.api.riotgames.com/lol/match/v4/matches/${match}`;
       const response = await limiter.executing({
         url: urlMatch,
@@ -87,22 +87,15 @@ const matchSearch = async (summoner) => {
       // console.log(matchInfo);
       return matchInfo;
     });
-
     const rawMatchData = await Promise.all(promises);
-    const pgParams = rawMatchData.map((match) => {
-      return parseRawMatchDataPG(match);
+    console.log('Match data retrieved: ', util.logTime(t0), 's');
+
+    const parsedPlayerMatchData = rawMatchData.map((match) => {
+      return parsePlayerMatchData(summoner, match);
     });
-    saveMatchData(pgParams); // Parses and saves new match data to SQL
+    console.log('Match data parsed: ', util.logTime(t0), 's');
 
-    const parsedMatchData = parseRawMatchData(rawMatchData);
-
-    const allMatchData = curMatchData.concat(parsedMatchData);
-    // console.log(allMatchData);
-
-    const stats = statsUtil.createStats(summoner, allMatchData);
-    console.log('MATCH STATS COMPLETE: ', summoner.name, ' - ', util.logTime(t0), 's');
-
-    return allMatchData;
+    return parsedPlayerMatchData;
   } catch (error) {
     console.log('Match search error: ', error);
     throw error;
