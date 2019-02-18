@@ -25,7 +25,7 @@ const parseRawMatchData = (summoner, match) => {
   return params;
 };
 
-const parsePlayerMatchData = (summoner, match) => {
+const parsePlayerMatchDataByName = (summoner, match) => {
   const participantId = m.getParticipantId(match.participantIdentities, summoner);
   const playerStats = m.getPlayerStats(match.participants, participantId);
   const params = [
@@ -37,9 +37,43 @@ const parsePlayerMatchData = (summoner, match) => {
     playerStats.stats.assists,
   ];
 
+  // console.log(params);
+
+  return params;
+};
+
+const parsePlayer = (id, match) => {
+  const playerIdenity = m.getPlayerStats(match.participantIdentities, id);
+  const playerStats = m.getPlayerStats(match.participants, id);
+  const params = [
+    playerIdenity.player.accountId,
+    match.gameId,
+    id,
+    playerStats.stats.kills,
+    playerStats.stats.deaths,
+    playerStats.stats.assists,
+  ];
+
   console.log(params);
 
   return params;
+};
+
+const parseAllPlayers = (match) => {
+  const result = [
+    parsePlayer(1, match),
+    parsePlayer(2, match),
+    parsePlayer(3, match),
+    parsePlayer(4, match),
+    parsePlayer(5, match),
+    parsePlayer(6, match),
+    parsePlayer(7, match),
+    parsePlayer(8, match),
+    parsePlayer(9, match),
+    parsePlayer(10, match),
+  ];
+
+  return result;
 };
 
 /*
@@ -54,7 +88,7 @@ const parsePlayerMatchData = (summoner, match) => {
 
 -- matches
 | match_id | red-team-win: true |  blue-team-win: false |
-*/
+
 
 // fetch summoner - insert into summoner table
 // fetch matches for summoner from riot
@@ -72,6 +106,7 @@ const parsePlayerMatchData = (summoner, match) => {
 //    JOIN summoner ON summoner.id = summoner_to_match.summoner_id
 //  WHERE summon.summmoner_id = $1 AND match_outcome = loss
 //
+*/
 
 const matchSearch = async (summoner, matches) => {
   const t0 = Date.now();
@@ -91,11 +126,13 @@ const matchSearch = async (summoner, matches) => {
     console.log('Match data retrieved: ', util.logTime(t0), 's');
 
     const parsedPlayerMatchData = rawMatchData.map((match) => {
-      return parsePlayerMatchData(summoner, match);
+      return parseAllPlayers(match);
     });
     console.log('Match data parsed: ', util.logTime(t0), 's');
 
-    return parsedPlayerMatchData;
+    const result = [].concat(...parsedPlayerMatchData);
+
+    return result;
   } catch (error) {
     console.log('Match search error: ', error);
     throw error;
@@ -103,43 +140,3 @@ const matchSearch = async (summoner, matches) => {
 };
 
 module.exports = matchSearch;
-
-/*
-
-
-const parseRawMatchData = (rawMatches) => {
-  const result = rawMatches.map((match) => {
-    return {
-      match: match.gameId.toString(),
-      season: match.seasonId,
-      region: match.platformId,
-      patch: match.gameVersion, // Patch the game was played on
-      duration: match.gameDuration, // Match length in seconds
-      blue: m.filterTeam(match.teams, 100), // Blue team
-      red: m.filterTeam(match.teams, 200), // Red team
-      players: m.filterPlayers(match.participantIdentities, match.participants), // All player stats
-    };
-  });
-  return result;
-};
-
-const saveMatchData = async (pgParams) => {
-  try {
-    const queries = pgParams.map(async (params) => {
-      const query = 'INSERT INTO public."matchInfo"'
-      + ' (match, season, region, patch, duration, blue, red, players)'
-      + ' VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (match)'
-      + ' DO UPDATE SET'
-      + ' match = $1, season = $2, region = $3, patch = $4, duration = $5, blue = $6, red = $7,'
-      + ' players = $8';
-      const response = await db.query(query, params);
-      return response.rows;
-    });
-    return Promise.all(queries);
-  } catch (error) {
-    console.log('Save match data error: ', error);
-    throw error;
-  }
-};
-
-*/

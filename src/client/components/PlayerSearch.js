@@ -6,9 +6,9 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import 'typeface-roboto';
 import { connect } from 'react-redux';
-import { updatePlayers } from '../redux/actions/actions.js';
+import { updatePlayers } from '../redux/actions/actions';
 
-const styles = theme => ({
+const styles = {
   rootHome: {
     display: 'flex',
     justifyContent: 'center',
@@ -31,24 +31,21 @@ const styles = theme => ({
     backgroundColor: '#34568f',
   },
   cssLabel: {
-      color : '#34568f'
+    color: '#34568f'
+  },
+  cssOutlinedInput: {
+    '&$cssFocused $notchedOutline': {
+      borderColor: `${'#34568f'} !important`,
     },
+  },
+  cssFocused: {},
+  notchedOutline: {
+    borderWidth: '1px',
+    borderColor: '#34568f !important'
+  },
+};
 
-    cssOutlinedInput: {
-      '&$cssFocused $notchedOutline': {
-        borderColor: `${'#34568f'} !important`,
-      },
-    },
-
-    cssFocused: {},
-
-    notchedOutline: {
-      borderWidth: '1px',
-      borderColor: '#34568f !important'
-    },
-});
-
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     updatePlayers: players => dispatch(updatePlayers(players))
   };
@@ -59,12 +56,12 @@ class PlayerSearch extends React.Component {
     playerSearch: '',
   };
 
-  updatePlayer = event => {
-    this.setState({playerSearch: event.target.value});
+  updatePlayer = (event) => {
+    this.setState({ playerSearch: event.target.value });
   }
 
-  searchPlayer = event => {
-    this.props.updatePlayers({players: this.state.playerSearch.split( /[:;!@?#$%^&*()=|+,]+/g )});
+  searchPlayer = (event) => {
+    this.props.updatePlayers({players: this.state.playerSearch.split(/[:;!@?#$%^&*()=|+,]+/g) });
   }
 
   keyPress = event => {
@@ -74,7 +71,7 @@ class PlayerSearch extends React.Component {
     }
   }
 
-  render(){
+  render() {
     const { classes, players } = this.props;
     const { playerSearch, playerLoaded } = this.state;
 
