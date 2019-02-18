@@ -9,19 +9,35 @@ const limiter = new RiotRateLimiter();
 // Grab existing match IDs from db
 // Query riot once with begin index 0 for 100 most recent Matches
 // If all 100 matches don't match db data, query next 100 (repeat)
-const getAllDBMatchIDs = async (accountId) => {
+const getDBMatchIds = async (summoner) => {
   try {
-    const query = 'SELECT * FROM public.summoner_to_match WHERE account = $1';
-    const response = await db.getMatchIDs(query, [accountId]);
+    const query = 'SELECT * FROM public.summoner_match_ids'
+    + ' WHERE account = $1';
+    const response = await db.query(query, [summoner.accountId]);
 
-    return response.rows;
+    return response.rows[0] ? response.rows[0].matches : [];
   } catch (error) {
-    console.log('Get Database MatchIDs error: ', error);
+    console.log('Get DB Match Id error: ', error);
     throw error;
   }
 };
 
-const getAllMatchIDs = async (index, accountID, dbMatches) => {
+const saveDBMatchIds = async (summoner, matches) => {
+  try {
+    const query = 'INSERT INTO public.summoner_match_ids (account, matches)'
+      + ' VALUES($1, $2) ON CONFLICT (account)'
+      + ' DO UPDATE SET account = $1, matches = $2';
+    const params = [summoner.accountId, matches];
+    const response = await db.query(query, params);
+
+    return response;
+  } catch (error) {
+    console.log('Save DB Match Id error: ', error);
+    throw error;
+  }
+};
+
+const getAllMatchIds = async (index, accountID, dbMatches) => {
   const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountID}?queue=420&beginIndex=${index}&`;
   // This function only works if 0 matches are saved, or if only brand new matches are missing.
   // If a match from a year ago is deleted and there are 100 matches saved that occurred after,
@@ -39,13 +55,13 @@ const getAllMatchIDs = async (index, accountID, dbMatches) => {
     const newMatches = riotMatches.filter((match) => {
       return !dbMatches.includes(match);
     });
-    console.log('New Match IDs: ', newMatches.length);
+    // console.log('New Match IDs: ', newMatches.length);
     const allMatches = newMatches.length > 0 ? newMatches.concat(dbMatches) : dbMatches;
 
     if (newMatches.length < 100) {
       return allMatches;
     }
-    return (getAllMatchIDs(index + 100, accountID, allMatches));
+    return (getAllMatchIds(index + 100, accountID, allMatches));
   } catch (error) {
     console.log('Get all matches error: ', error);
     throw error;
@@ -95,25 +111,36 @@ const getSummoner = async (summoner) => {
     + ' WHERE public.summoners.puuid = $1';
     const getParam = [summoner.puuid];
     const response = await db.query(getQuery, getParam);
-    // console.log(response.rows);
+
     if (response.rowCount === 0 || response.rows[0].name !== summoner.name) {
       await saveSummoner(summoner);
     }
 
     const dbMatchData = response.rows;
-    const dbMatchIds = dbMatchData.map((match) => { // Filters match data into match ids
-      return match.match_id;
-    });
-    console.log('DB matches length: ', dbMatchData.length);
-    console.log('Time elapsed: ', util.logTime(t0), 's');
+    const dbMatchIds = await getDBMatchIds(summoner);
 
-    const allMatchIds = await getAllMatchIDs(0, summoner.accountId, dbMatchIds); // Gets new matches
+    console.log('DB matches length: ', dbMatchIds.length);
+    console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
+
+    const allMatchIds = await getAllMatchIds(0, summoner.accountId, dbMatchIds); // Gets new matches
     console.log('Total matches length: ', allMatchIds.length);
-    console.log('Time elapsed: ', util.logTime(t0), 's');
+    console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
+    await saveDBMatchIds(summoner, allMatchIds);
+    console.log('Database match ids saved!');
+    console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
+
+    /* let newMatchData = dbMatchData.filter((match) => {
+      return match.match_id;
+    }); */
     let newMatchData = allMatchIds.filter((match) => { // Filters all match ids into new matches
       return !dbMatchIds.includes(match);
     });
+    if (newMatchData.length === 0) {
+      return dbMatchData;
+    }
+
+
     newMatchData = await saveSummonerMatchData(summoner, newMatchData); // Saves new match data
     console.log('Matches saved!');
     console.log('Time elapsed: ', util.logTime(t0), 's');
@@ -126,7 +153,6 @@ const getSummoner = async (summoner) => {
     throw error;
   }
 };
-
 
 // Beginning of summoner lookup
 const playerSearch = async (req) => {
@@ -175,64 +201,3 @@ const playerSearch = async (req) => {
 };
 
 module.exports = playerSearch;
-
-/*
-const oldGetDBMatchIDs = async (summoner) => {
-  try {
-    const query = 'SELECT * FROM public."playerMatches" WHERE player = $1';
-    const response = await db.getMatchIDs(query, [summoner]);
-
-    return response.rows[0] ? response.rows[0].matches : [];
-  } catch (error) {
-    console.log('Get Database MatchIDs error: ', error);
-    return Promise.reject(error);
-  }
-};
-
-const oldGetAllMatchIDs = async (index, accountID, dbMatches) => {
-  const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountID}?queue=420&beginIndex=${index}&`;
-
-  try {
-    const response = await limiter.executing({
-      url: urlMatches,
-      token: API_KEY,
-      resolveWithFullResponse: true
-    });
-    const result = JSON.parse(response.body);
-    const riotMatches = result.matches.map((match) => {
-      return match.gameId.toString();
-    });
-    const newMatches = riotMatches.filter((match) => {
-      return !dbMatches.includes(match);
-    });
-    console.log('New Match IDs: ', newMatches.length);
-    const allMatches = newMatches.length > 0 ? newMatches.concat(dbMatches) : dbMatches;
-
-    if (newMatches.length < 100) {
-      return allMatches;
-    }
-    return (getAllMatchIDs(index + 100, accountID, allMatches));
-  } catch (error) {
-    console.log('Get all matches error: ', error);
-    return Promise.reject(error);
-  }
-};
-
-const saveMatchIDs = async (summonerSummaries) => {
-  try {
-    const queries = summonerSummaries.map(async (summoner) => {
-      const id = summoner.name;
-      const matches = summoner.matchHistory.matchIDs;
-      const query = 'INSERT INTO public."playerMatches" (player, matches)'
-      + ' VALUES($1, $2) ON CONFLICT (player)'
-      + ' DO UPDATE SET player = $1, matches = $2 RETURNING *';
-      const response = await db.query(query, [id, matches]);
-      return response.rows[0];
-    });
-    return Promise.all(queries);
-  } catch (error) {
-    console.log('Save Match IDs error: ', error);
-    return Promise.reject(error);
-  }
-};
-*/

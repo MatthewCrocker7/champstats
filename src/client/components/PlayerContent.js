@@ -6,7 +6,7 @@ import NavBar from './NavBar';
 import PlayerSummary from './playerComponents/PlayerSummary';
 import PlayerChampStats from './playerComponents/PlayerChampStats';
 
-const styles = theme => ({
+const styles = {
   root: {
     marginTop: '10px',
     borderTop: '3px solid #34568f',
@@ -22,7 +22,7 @@ const styles = theme => ({
     fontFamily: 'Roboto',
     textAlign: 'center',
   },
-});
+};
 
 const mapStateToProps = (state) => {
   return {
@@ -86,7 +86,7 @@ class PlayerContent extends React.Component {
         clearInterval(interval);
         throw new Error(error);
       }
-    }, 5000);
+    }, 2000);
   }
 
   async searchPlayer() {

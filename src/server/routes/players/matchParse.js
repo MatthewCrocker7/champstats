@@ -7,20 +7,6 @@ const filterTeam = (teams, teamId) => {
   return result;
 };
 
-const getIdentity = (playerIdentities, playerId) => {
-  const playerIdentity = playerIdentities.filter((player) => {
-    return player.participantId === playerId;
-  })[0];
-  return playerIdentity.player.summonerName;
-};
-
-const getParticipantId = (playerIdentities, summoner) => {
-  const playerIdentity = playerIdentities.filter((player) => {
-    return player.player.accountId === summoner.accountId;
-  })[0];
-  return playerIdentity.participantId;
-};
-
 const getTeammates = (playerIdentities, allPlayerStats, playerId, teamId) => {
   const teammates = allPlayerStats.filter((player) => {
     return (player.teamId === teamId && player.participantId !== playerId);
@@ -47,6 +33,20 @@ const getEnemies = (playerIdentities, allPlayerStats, playerId, teamId) => {
     };
   });
   return result;
+};
+
+const getPlayerIdentity = (playerIdentities, id) => {
+  const playerIdentity = playerIdentities.filter((player) => {
+    return player.participantId === id;
+  })[0];
+  return playerIdentity;
+};
+
+const getParticipantId = (playerIdentities, summoner) => {
+  const playerIdentity = playerIdentities.filter((player) => {
+    return player.player.accountId === summoner.accountId;
+  })[0];
+  return playerIdentity.participantId;
 };
 
 const getPlayerStats = (participants, id) => {
@@ -110,10 +110,7 @@ const filterPlayers = (playerIdentities, allPlayerStats) => {
 };
 
 module.exports = {
-  filterTeam,
-  getTeammates,
-  getEnemies,
-  filterPlayers,
+  getPlayerIdentity,
   getParticipantId,
   getPlayerStats
 };
