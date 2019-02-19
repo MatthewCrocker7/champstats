@@ -7,40 +7,6 @@ const statsUtil = require('./createPlayerStats');
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
 
-const parseRawMatchData = (summoner, match) => {
-  // This function parses match data into an array to save to SQL
-  const params = [
-    match.gameId, // Unique identifier for each match
-    match.seasonId, // Seasons do match integer direction. e.g. season8 = id11
-    match.platformId, // Region (NA, EU, KR, etc.)
-    match.gameVersion, // Patch the game was played on
-    match.gameDuration, // Match length in seconds
-    m.filterTeam(match.teams, 100), // Blue team
-    m.filterTeam(match.teams, 200), // Red team
-    m.filterPlayers(match.participantIdentities, match.participants), // All player stats
-  ];
-
-  console.log(params);
-
-  return params;
-};
-
-const parsePlayerMatchDataByName = (summoner, match) => {
-  const participantId = m.getParticipantId(match.participantIdentities, summoner);
-  const playerStats = m.getPlayerStats(match.participants, participantId);
-  const params = [
-    summoner.accountId,
-    match.gameId,
-    participantId,
-    playerStats.stats.kills,
-    playerStats.stats.deaths,
-    playerStats.stats.assists,
-  ];
-
-  // console.log(params);
-
-  return params;
-};
 
 const parsePlayer = (id, match) => {
   const playerIdenity = m.getPlayerStats(match.participantIdentities, id);
@@ -108,7 +74,7 @@ const parseAllPlayers = (match) => {
 //
 */
 
-const matchSearch = async (summoner, matches) => {
+const matchSearch = async (matches) => {
   const t0 = Date.now();
   try {
     const promises = matches.map(async (match) => {

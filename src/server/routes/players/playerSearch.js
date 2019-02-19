@@ -39,9 +39,7 @@ const saveDBMatchIds = async (summoner, matches) => {
 
 const getAllMatchIds = async (index, accountID, dbMatches) => {
   const urlMatches = `https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/${accountID}?queue=420&beginIndex=${index}&`;
-  // This function only works if 0 matches are saved, or if only brand new matches are missing.
-  // If a match from a year ago is deleted and there are 100 matches saved that occurred after,
-  // this function won't detect that old match
+
   try {
     const response = await limiter.executing({
       url: urlMatches,
@@ -77,6 +75,8 @@ const saveSummonerMatchData = async (summoner, matches) => {
         + ' VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (account, match_id)'
         + ' DO UPDATE SET account = $1, match_id = $2, player_id = $3, kills = $4,'
         + ' deaths = $5, assists = $6';
+        // team_id, champion_id, vision_score, item_0 to 6, total_damage_dealt, total_damage_taken
+        // damage_dealt_to_champions, double_kills to penta, total_cs, spell_1_id, spell_2_id
       const response = await db.query(query, match);
       return response.rows[0];
     });
