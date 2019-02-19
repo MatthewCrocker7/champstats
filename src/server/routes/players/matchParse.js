@@ -13,7 +13,6 @@ const getTeammates = (playerIdentities, allPlayerStats, playerId, teamId) => {
   });
   const result = teammates.map((player) => {
     return {
-      name: getIdentity(playerIdentities, player.participantId),
       champion: gameConstants.getChampion(player.championId),
       lane: player.timeline.lane,
     };
@@ -27,7 +26,6 @@ const getEnemies = (playerIdentities, allPlayerStats, playerId, teamId) => {
   });
   const result = enemies.map((player) => {
     return {
-      name: getIdentity(playerIdentities, player.participantId),
       champion: gameConstants.getChampion(player.championId),
       lane: player.timeline.lane,
     };
