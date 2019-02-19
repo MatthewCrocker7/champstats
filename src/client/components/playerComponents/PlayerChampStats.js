@@ -1,14 +1,18 @@
-import React, { Component } from 'react';
+/* eslint-disable react/prefer-stateless-function */
+import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
+import Divider from '@material-ui/core/Divider';
+import Filters from '../searchComponents/Filters';
 
 const styles = theme => ({
-  gridRoot: {
+  rootStyle: {
     flexGrow: 1,
+    height: '100vh',
+    width: '100%',
   },
   textStyle: {
     color: '#34568f',
-    fontFamily: "Roboto",
+    fontFamily: 'Roboto',
     textAlign: 'center',
   },
   contentLayout: {
@@ -21,33 +25,14 @@ const styles = theme => ({
 });
 
 class PlayerChampStats extends React.Component {
-  render(){
+  render() {
     const { classes, stats } = this.props;
 
-    return(
-      <div className={classes.gridRoot}>
-        <Grid container spacing={24}>
-          <Grid item xs={6}>
-            <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.name} - {x.level}</h1>)}
-            </div>
-          </Grid>
-          <Grid item xs={6}>
-            <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.name} - {x.level}</h1>)}
-            </div>
-          </Grid>
-          <Grid item xs={6}>
-            <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.name} - {x.level}</h1>)}
-            </div>
-          </Grid>
-          <Grid item xs={6}>
-            <div className={classes.contentLayout}>
-              {stats.map(x => <h1 className={classes.textStyle} key={x.toString()}>{x.name} - {x.level}</h1>)}
-            </div>
-          </Grid>
-        </Grid>
+    return (
+      <div className={classes.rootStyle}>
+        <Filters />
+        <Divider variant="middle" />
+        <h1 className={classes.textStyle}>stats go here</h1>
       </div>
     );
   }

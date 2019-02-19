@@ -15,19 +15,19 @@ const styles = {
   },
   rootLoad: {
     display: 'flex',
-    marginLeft: '5%',
+    marginLeft: '2%',
     justifyContent: 'left',
   },
   textField: {
     margin: '0px',
-    width: '25%',
+    width: '20%',
     backgroundColor: '#FFFFFF',
   },
   buttonStyle: {
     textAlign: 'center',
     display: 'inline-block',
     margin: '0px',
-    width: '10%',
+    width: '8%',
     backgroundColor: '#34568f',
   },
   cssLabel: {
@@ -76,7 +76,7 @@ class PlayerSearch extends React.Component {
     const { playerSearch, playerLoaded } = this.state;
 
 
-    return(
+    return (
       <div className={players ? classes.rootLoad : classes.rootHome }>
         <TextField
           onChange={this.updatePlayer}
