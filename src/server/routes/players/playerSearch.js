@@ -10,6 +10,7 @@ const limiter = new RiotRateLimiter();
 // Query riot once with begin index 0 for 100 most recent Matches
 // If all 100 matches don't match db data, query next 100 (repeat)
 const getDBMatchIds = async (summoner) => {
+  // This database will only contain ids if that specific name has been searched
   try {
     const query = 'SELECT * FROM public.summoner_match_ids'
     + ' WHERE account = $1';
@@ -23,6 +24,7 @@ const getDBMatchIds = async (summoner) => {
 };
 
 const saveDBMatchIds = async (summoner, matches) => {
+  // This database will only contain ids if that specific name has been searched
   try {
     const query = 'INSERT INTO public.summoner_match_ids (account, matches)'
       + ' VALUES($1, $2) ON CONFLICT (account)'
@@ -67,6 +69,8 @@ const getAllMatchIds = async (index, accountID, dbMatches) => {
 };
 
 const saveSummonerMatchData = async (summoner, matches) => {
+  // This saves match data of everyone in every match
+  // Regardless if they were the name searched or not
   const matchData = await matchSearch(summoner, matches);
   try {
     const queries = matchData.map(async (match) => {
@@ -126,26 +130,36 @@ const getSummoner = async (summoner) => {
     console.log('Total matches length: ', allMatchIds.length);
     console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
-    await saveDBMatchIds(summoner, allMatchIds);
+    saveDBMatchIds(summoner, allMatchIds);
     console.log('Database match ids saved!');
     console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
-    /* let newMatchData = dbMatchData.filter((match) => {
-      return match.match_id;
-    }); */
-    let newMatchData = allMatchIds.filter((match) => { // Filters all match ids into new matches
+    const newMatchIds = allMatchIds.filter((match) => { // Filters all match ids into new matches
       return !dbMatchIds.includes(match);
     });
-    if (newMatchData.length === 0) {
+    if (newMatchIds.length === 0 && dbMatchData.length === dbMatchIds.length) {
+      // Returns data if there are no new matches
+      // Parse stats first
       return dbMatchData;
     }
 
+    let result;
+    if (dbMatchData.length === dbMatchIds.length) {
+      // Saves only new match data
+      const newMatchData = await saveSummonerMatchData(newMatchIds);
+      result = newMatchData.concat(dbMatchData);
+    } else if (newMatchIds.length === 0) {
+      // Saves data that should already be there
+      result = await saveSummonerMatchData(dbMatchIds);
+    } else {
+      // Saves all match data
+      result = await saveSummonerMatchData(allMatchIds);
+    }
 
-    newMatchData = await saveSummonerMatchData(summoner, newMatchData); // Saves new match data
     console.log('Matches saved!');
     console.log('Time elapsed: ', util.logTime(t0), 's');
 
-    const result = newMatchData.concat(dbMatchData);
+    // Parse result into final summary stats here
 
     return result;
   } catch (error) {
