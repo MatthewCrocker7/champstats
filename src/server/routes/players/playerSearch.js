@@ -75,10 +75,27 @@ const saveSummonerMatchData = async (summoner, matches) => {
   try {
     const queries = matchData.map(async (match) => {
       const query = 'INSERT INTO public.summoner_to_match'
-        + ' (account, match_id, player_id, kills, deaths, assists)'
-        + ' VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (account, match_id)'
+        + ' (account, match_id, player_id, kills, deaths, assists, team_id,'
+        + ' champion_id, total_cs, spell_1_id, spell_2_id, vision_score,'
+        + ' item_0, item_1, item_2, item_3, item_4, item_5, item_6, double_kills,'
+        + ' triple_kills, quadra_kills, penta_kills, total_damage_dealt,'
+        + ' damage_dealt_to_champions, total_damage_taken, damage_self_mitigated,'
+        + ' total_healing, gold_earned, gold_spent, champion_level, perk_0, perk_1,'
+        + ' perk_2, perk_3, perk_4, perk_5, stat_perk_0, stat_perk_1, stat_perk_2)'
+        + ' VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,'
+        + ' $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,'
+        + ' $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)'
+        + ' ON CONFLICT (account, match_id)'
         + ' DO UPDATE SET account = $1, match_id = $2, player_id = $3, kills = $4,'
-        + ' deaths = $5, assists = $6';
+        + ' deaths = $5, assists = $6, team_id = $7, champion_id = $8, total_cs = $9,'
+        + ' spell_1_id = $10, spell_2_id = $11, vision_score = $12, item_0 = $13,'
+        + ' item_1 = $14, item_2 = $15, item_3 = $16, item_4 = $17, item_5 = $18,'
+        + ' item_6 = $19, double_kills = $20, triple_kills = $21, quadra_kills = $22,'
+        + ' penta_kills = $23, total_damage_dealt = $24, damage_dealt_to_champions = $25,'
+        + ' total_damage_taken = $26, damage_self_mitigated = $27, total_healing = $28,'
+        + ' gold_earned = $29, gold_spent = $30, champion_level = $31, perk_0 = $32,'
+        + ' perk_1 = $33, perk_2 = $34, perk_3 = $35, perk_4 = $36, perk_5 = $37'
+        + ' stat_perk_0 = $38, stat_perk_1 = $39, stat_perk_2 = $40';
         // team_id, champion_id, vision_score, item_0 to 6, total_damage_dealt, total_damage_taken
         // damage_dealt_to_champions, double_kills to penta, total_cs, spell_1_id, spell_2_id
       const response = await db.query(query, match);
@@ -121,12 +138,12 @@ const getSummoner = async (summoner) => {
     }
 
     const dbMatchData = response.rows;
-    const dbMatchIds = await getDBMatchIds(summoner);
+    const dbMatchIds = await getDBMatchIds(summoner); // This variable only used to getAllMatchIds
 
     console.log('DB matches length: ', dbMatchIds.length);
     console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
-    const allMatchIds = await getAllMatchIds(0, summoner.accountId, dbMatchIds); // Gets new matches
+    const allMatchIds = await getAllMatchIds(0, summoner.accountId, dbMatchIds); // Gets all matchs ids
     console.log('Total matches length: ', allMatchIds.length);
     console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
@@ -134,17 +151,22 @@ const getSummoner = async (summoner) => {
     console.log('Database match ids saved!');
     console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
-    const newMatchIds = allMatchIds.filter((match) => { // Filters all match ids into new matches
-      return !dbMatchIds.includes(match);
+    const filterIds = dbMatchData.map((match) => {
+      return match.match_id;
     });
+    const newMatchIds = allMatchIds.filter((match) => { // Filters all match ids into new matches
+      return !filterIds.includes(match);
+    });
+
     if (newMatchIds.length === 0 && dbMatchData.length === dbMatchIds.length) {
       // Returns data if there are no new matches
       // Parse stats first
       return dbMatchData;
     }
 
-    let result;
-    if (dbMatchData.length === dbMatchIds.length) {
+    const newMatchData = await saveSummonerMatchData(newMatchIds);
+
+    /* if (dbMatchData.length === dbMatchIds.length) {
       // Saves only new match data
       const newMatchData = await saveSummonerMatchData(newMatchIds);
       result = newMatchData.concat(dbMatchData);
@@ -154,10 +176,12 @@ const getSummoner = async (summoner) => {
     } else {
       // Saves all match data
       result = await saveSummonerMatchData(allMatchIds);
-    }
+    } */
 
     console.log('Matches saved!');
     console.log('Time elapsed: ', util.logTime(t0), 's');
+
+    const result = newMatchData.concat(dbMatchData);
 
     // Parse result into final summary stats here
 
