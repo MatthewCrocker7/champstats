@@ -94,7 +94,7 @@ const saveSummonerMatchData = async (summoner, matches) => {
         + ' penta_kills = $23, total_damage_dealt = $24, damage_dealt_to_champions = $25,'
         + ' total_damage_taken = $26, damage_self_mitigated = $27, total_healing = $28,'
         + ' gold_earned = $29, gold_spent = $30, champion_level = $31, perk_0 = $32,'
-        + ' perk_1 = $33, perk_2 = $34, perk_3 = $35, perk_4 = $36, perk_5 = $37'
+        + ' perk_1 = $33, perk_2 = $34, perk_3 = $35, perk_4 = $36, perk_5 = $37,'
         + ' stat_perk_0 = $38, stat_perk_1 = $39, stat_perk_2 = $40';
         // team_id, champion_id, vision_score, item_0 to 6, total_damage_dealt, total_damage_taken
         // damage_dealt_to_champions, double_kills to penta, total_cs, spell_1_id, spell_2_id
