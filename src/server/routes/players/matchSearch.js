@@ -42,7 +42,7 @@ const parsePlayer = (id, match) => {
     player.stats.totalHeal, // total healing 28
     player.stats.goldEarned, // gold earned
     player.stats.goldSpent, // gold spent
-    player.stats.championLevel, // champion level 31
+    player.stats.champLevel, // champion level 31
     player.stats.perk0,
     player.stats.perk1,
     player.stats.perk2,
