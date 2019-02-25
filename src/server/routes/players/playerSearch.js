@@ -129,8 +129,6 @@ const getSummoner = async (summoner) => {
   console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
   saveDBMatchIds(summoner, allMatchIds);
-  console.log('Database match ids saved!');
-  console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
   const filterIds = dbMatchData.map((match) => {
     return match.match_id;
@@ -151,11 +149,12 @@ const getSummoner = async (summoner) => {
   await savePlayerMatchData(newMatchIds);
 
   console.log('Matches saved!');
-  console.log('Time elapsed: ', util.logTime(t0), 's');
+  console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
 
   const allMatchData = await getDBMatchData(summoner);
-  console.log(allMatchData);
+
   console.log('All match data length: ', allMatchData.length);
+  console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
   // const result = newMatchData.concat(dbMatchData);
 
   // Parse result into final summary stats here
