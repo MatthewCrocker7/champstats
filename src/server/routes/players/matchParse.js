@@ -48,9 +48,17 @@ const getPlayerStats = (participants, id) => {
   return stats;
 };
 
+const getTeam = (teams, id) => {
+  const team = teams.filter((x) => {
+    return x.teamId === id;
+  })[0];
+
+  return team;
+};
 
 module.exports = {
   getPlayerIdentity,
   getParticipantId,
   getPlayerStats,
+  getTeam,
 };
