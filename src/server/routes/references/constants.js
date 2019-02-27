@@ -583,14 +583,14 @@ const seasons = {
     season: 7
   },
   11: {
-    name: 'Season 8',
+    name: 'Season 2018',
     season: 8
   },
   12: {
-    name: 'Pre-Season 9',
+    name: 'Pre-Season 2019',
   },
   13: {
-    name: 'Season 9',
+    name: 'Season 2019',
     season: 9
   }
 };
