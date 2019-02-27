@@ -2,6 +2,7 @@ const RiotRateLimiter = require('riot-ratelimiter');
 const db = require('../../db');
 const matchSearch = require('./matchSearch.js');
 const util = require('../references/utils');
+const stats = require('./createPlayerStats');
 
 const API_KEY = process.env.RIOT_API_KEY || '';
 const limiter = new RiotRateLimiter();
@@ -142,6 +143,7 @@ const getSummoner = async (summoner) => {
   if (newMatchIds.length === 0 && dbMatchData.length === dbMatchIds.length) {
     // Returns data if there are no new matches
     // Parse stats first
+    stats.getKDA(dbMatchData);
     return dbMatchData;
   }
 
@@ -157,6 +159,7 @@ const getSummoner = async (summoner) => {
   console.log('Time elapsed: ', summoner.name, ' - ', util.logTime(t0), 's');
   // const result = newMatchData.concat(dbMatchData);
 
+  stats.getKDA(allMatchData);
   // Parse result into final summary stats here
 
   return allMatchData;
